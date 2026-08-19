@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>learncyber.com.au — plaintext login demo</title>
+<meta name="description" content="A deliberately unencrypted demonstration page. Authentication happens entirely in the browser.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=Public+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#dce1e6;
+    --panel:#edf0f2;
+    --ink:#0e1e2b;
+    --ink-soft:#4a6072;
+    --rule:#a6b7c2;
+    --stamp:#b23a32;
+    --live:#a8791b;
+    --live-bg:#f6e6b8;
+    --pad:clamp(1.1rem,3vw,2rem);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper);
+    background-image:linear-gradient(var(--rule) 1px,transparent 1px);
+    background-size:100% 2.4rem;
+    color:var(--ink);
+    font-family:"Public Sans",system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    padding:var(--pad);
+  }
+  .sheet{max-width:1040px;margin:0 auto}
+
+  .topline{
+    display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);
+    border-bottom:2px solid var(--ink);padding-bottom:.5rem;
+  }
+  .topline span::before{content:"▸ ";color:var(--stamp)}
+
+  .masthead{display:flex;flex-wrap:wrap;gap:1.5rem;align-items:flex-start;justify-content:space-between;margin:1.6rem 0 2.2rem}
+  .masthead h1{
+    font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
+    font-size:clamp(2.1rem,7vw,4.4rem);line-height:.94;letter-spacing:-.03em;
+    margin:0;max-width:14ch;
+  }
+  .masthead h1 em{font-style:normal;color:var(--stamp)}
+  .masthead p{margin:.7rem 0 0;max-width:34ch;color:var(--ink-soft)}
+
+  .stamp{
+    flex:0 0 auto;transform:rotate(-4deg);
+    border:3px double var(--stamp);color:var(--stamp);
+    padding:.5rem .9rem;text-align:center;
+    font-family:"IBM Plex Mono",monospace;font-weight:600;
+    letter-spacing:.16em;text-transform:uppercase;
+  }
+  .stamp b{display:block;font-size:1.05rem}
+  .stamp small{font-size:.62rem;opacity:.85;letter-spacing:.2em}
+
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:1.4rem;align-items:start}
+  @media (max-width:820px){.cols{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:2px solid var(--ink);padding:var(--pad)}
+  .card > h2{
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:600;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);
+    margin:0 0 1.1rem;padding-bottom:.55rem;border-bottom:1px solid var(--rule);
+  }
+
+  .field{margin-bottom:1rem}
+  .field label{display:block;font-family:"IBM Plex Mono",monospace;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem}
+  .field input{
+    width:100%;padding:.65rem .7rem;background:#fff;color:var(--ink);
+    border:2px solid var(--ink);border-radius:0;
+    font-family:"IBM Plex Mono",monospace;font-size:1rem;
+  }
+  .field input:focus{outline:3px solid var(--stamp);outline-offset:2px}
+
+  .signin{
+    width:100%;padding:.8rem;cursor:pointer;
+    background:var(--ink);color:var(--panel);border:2px solid var(--ink);
+    font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:1.05rem;letter-spacing:.02em;
+  }
+  .signin:hover{background:var(--stamp);border-color:var(--stamp)}
+  .signin:focus-visible{outline:3px solid var(--stamp);outline-offset:3px}
+
+  .hint{margin:.9rem 0 0;font-size:.82rem;color:var(--ink-soft)}
+  .hint code{background:var(--live-bg);padding:.05rem .3rem;font-family:"IBM Plex Mono",monospace}
+
+  .error{
+    display:none;margin:0 0 1rem;padding:.6rem .7rem;
+    border-left:4px solid var(--stamp);background:#f7dedb;
+    font-size:.88rem;
+  }
+  .error.on{display:block}
+
+  .wire{background:var(--ink);color:#c9d6df;border-color:var(--ink)}
+  .wire > h2{color:#7e97a8;border-bottom-color:#2a3f50}
+  .wire pre{
+    margin:0;font-family:"IBM Plex Mono",monospace;font-size:.82rem;
+    line-height:1.75;white-space:pre-wrap;word-break:break-all;
+  }
+  .wire mark{background:var(--live-bg);color:var(--ink);padding:0 .15rem}
+  .caret{background:#c9d6df;color:var(--ink)}
+  @media (prefers-reduced-motion:no-preference){
+    .caret{animation:blink 1.1s steps(1,end) infinite}
+    @keyframes blink{50%{background:transparent;color:transparent}}
+  }
+  .wire .note{margin:1.1rem 0 0;padding-top:.8rem;border-top:1px solid #2a3f50;font-size:.78rem;color:#7e97a8}
+
+  .granted{border-color:var(--stamp)}
+  .granted > h2{color:var(--stamp);border-bottom-color:var(--stamp)}
+  .granted h3{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:1.8rem;margin:0 0 .5rem;letter-spacing:-.02em}
+  .signout{
+    margin-top:1rem;display:inline-block;padding:.55rem .9rem;
+    background:none;border:2px solid var(--ink);color:var(--ink);cursor:pointer;
+    font-family:"IBM Plex Mono",monospace;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;
+  }
+  .signout:hover{background:var(--ink);color:var(--panel)}
+
+  footer{
+    margin-top:2rem;padding-top:.8rem;border-top:2px solid var(--ink);
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;
+    letter-spacing:.08em;color:var(--ink-soft);
+  }
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="topline">
+    <span>http · port 80</span>
+    <span>no transport encryption</span>
+    <span>credentials validated in browser</span>
+    <span>training exercise</span>
+  </div>
+
+  <header class="masthead">
+    <div>
+      <h1>Everything here travels in <em>plain text</em>.</h1>
+      <p>This page is served without TLS and checks your password with JavaScript that anyone can read. Nothing you type is protected, and nothing is stored on a server.</p>
+    </div>
+    <div class="stamp" role="img" aria-label="Marked not secure">
+      <b>Not secure</b>
+      <small>no tls · port 80</small>
+    </div>
+  </header>
+
+  <main class="cols">
+
+    <!-- LOGIN -->
+    <section class="card" id="loginCard">
+      <h2>Sign in</h2>
+      <p class="error" id="error" role="alert">Wrong username or password. Try the demo credentials below.</p>
+      <form method="get" action="" id="loginForm">
+        <div class="field">
+          <label for="u">Username</label>
+          <input id="u" name="u" type="text" autocomplete="off" spellcheck="false" required>
+        </div>
+        <div class="field">
+          <label for="p">Password</label>
+          <input id="p" name="p" type="password" autocomplete="off" required>
+        </div>
+        <button class="signin" type="submit">Sign in</button>
+      </form>
+      <p class="hint">Demo credentials: <code>demo</code> / <code>letmein</code>. Submitting reloads this same page with your details in the address bar.</p>
+    </section>
+
+    <!-- GRANTED -->
+    <section class="card granted" id="grantedCard" hidden>
+      <h2>Signed in</h2>
+      <h3>Hello, <span id="who">demo</span>.</h3>
+      <p>You are past the login box. The check that let you through ran in this page, so anyone can skip it by editing the address bar or opening the developer console.</p>
+      <p>Your password is still sitting in the URL, in your browser history, and in any proxy log along the way.</p>
+      <button class="signout" type="button" id="signout">Sign out</button>
+    </section>
+
+    <!-- WIRE -->
+    <section class="card wire">
+      <h2>What the network sees</h2>
+      <pre id="wire"></pre>
+      <p class="note">Over HTTP this request crosses every router, Wi-Fi access point and proxy between you and the server as readable text.</p>
+    </section>
+
+  </main>
+
+  <footer>learncyber.com.au — training demonstration · static page · no server-side code · no data collected</footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var USER = "demo";
+  var PASS = "letmein";
+
+  var params  = new URLSearchParams(window.location.search);
+  var sentU   = params.get("u");
+  var sentP   = params.get("p");
+  var attempt = sentU !== null || sentP !== null;
+
+  var loginCard   = document.getElementById("loginCard");
+  var grantedCard = document.getElementById("grantedCard");
+  var errorBox    = document.getElementById("error");
+  var wire        = document.getElementById("wire");
+  var uField      = document.getElementById("u");
+  var pField      = document.getElementById("p");
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  // --- the "wire" panel: mirrors the plaintext request as it is being typed ---
+  function draw(u, p, live) {
+    var qs = (u || p)
+      ? "?u=" + esc(encodeURIComponent(u)) + "&p=<mark>" + esc(encodeURIComponent(p)) + "</mark>"
+      : "";
+    wire.innerHTML =
+      "GET /" + qs + " HTTP/1.1" + (live ? '<span class="caret"> </span>' : "") + "\n" +
+      "Host: learncyber.com.au\n" +
+      "User-Agent: " + esc(navigator.userAgent) + "\n" +
+      "Connection: keep-alive\n\n" +
+      (u || p
+        ? "username = <mark>" + esc(u) + "</mark>\npassword = <mark>" + esc(p) + "</mark>"
+        : "Start typing to see the request take shape.");
+  }
+
+  function liveDraw() { draw(uField.value, pField.value, true); }
+  uField.addEventListener("input", liveDraw);
+  pField.addEventListener("input", liveDraw);
+
+  // --- client-side "authentication" on page load ---
+  if (attempt && sentU === USER && sentP === PASS) {
+    loginCard.hidden = true;
+    grantedCard.hidden = false;
+    document.getElementById("who").textContent = sentU;
+    draw(sentU, sentP, false);
+  } else {
+    if (attempt) {
+      errorBox.classList.add("on");
+      uField.value = sentU || "";
+    }
+    draw(uField.value, pField.value, false);
+    uField.focus();
+  }
+
+  // sign out = redirect to this same page with no query string
+  document.getElementById("signout").addEventListener("click", function () {
+    window.location.href = window.location.pathname;
+  });
+})();
+</script>
+</body>
+</html>
