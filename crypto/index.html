@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Encryption workshop — symmetric and asymmetric</title>
+<style>
+  :root{
+    --paper:#E9EEF1; --panel:#FFFFFF; --ink:#0E1F2A; --ink-soft:#546874;
+    --rule:#C2D0D8; --rule-soft:#DDE6EA; --field:#F6F9FA;
+    --sym:#0C7A69; --asym:#7A3E8F; --warn:#A44A3F; --weak:#9AA8B0;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --accent:var(--sym);
+  }
+  body.asym{--accent:var(--asym)}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+       line-height:1.5;overflow:hidden}
+  .app{height:100dvh;display:flex;flex-direction:column;padding:10px 14px 12px;gap:9px}
+
+  .topbar{display:flex;align-items:center;gap:12px;flex:0 0 auto;
+          border-bottom:1px solid var(--rule);padding-bottom:8px}
+  .topbar h1{font-size:clamp(14px,1.6vw,19px);font-weight:600;letter-spacing:-.02em;margin:0}
+  .tabs{display:flex;gap:0;border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+  .tabs button{border:0;border-radius:0;background:var(--panel);padding:6px 13px;font-size:12.5px;
+               color:var(--ink-soft);cursor:pointer;font-family:var(--sans)}
+  .tabs button+button{border-left:1px solid var(--rule)}
+  .tabs button[aria-selected=true]{background:var(--accent);color:#fff;font-weight:500}
+  .spacer{flex:1}
+
+  .banner{background:#F6E9E6;border:1px solid var(--warn);color:var(--warn);
+          border-radius:3px;padding:9px 12px;font-size:13px;display:none;flex:0 0 auto}
+  .banner.show{display:block}
+  .banner code{font-family:var(--mono);font-size:12px;background:#fff;padding:1px 5px;border-radius:2px}
+
+  .main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .col{min-height:0;display:flex;flex-direction:column;gap:9px;overflow:auto}
+
+  .card{background:var(--panel);border:1px solid var(--rule);border-radius:3px;
+        padding:10px 12px 12px;flex:0 0 auto}
+  .card.grow{flex:1;min-height:0;display:flex;flex-direction:column}
+  .card h2{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+           color:var(--ink-soft);font-weight:400;margin:0 0 8px;display:flex;
+           justify-content:space-between;align-items:baseline;gap:8px}
+  .card h2 .num{color:var(--accent);font-weight:600}
+  .card h2 .cnt{font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none;font-size:11px}
+  .card h2 .cnt.over{color:var(--warn);font-weight:600}
+
+  textarea{width:100%;font-family:var(--mono);font-size:12.5px;line-height:1.45;
+           border:1px solid var(--rule);border-radius:3px;background:var(--field);
+           color:var(--ink);padding:8px 9px;resize:none;display:block}
+  textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px;background:#fff}
+  textarea[readonly]{color:var(--ink-soft)}
+  .grow textarea{flex:1;min-height:0}
+  .lbl{font-size:12px;font-weight:500;margin:0 0 4px;display:flex;
+       justify-content:space-between;align-items:baseline;gap:8px}
+  .lbl+textarea{margin-bottom:9px}
+  .lbl .hint{font-weight:400;font-size:11px;color:var(--weak)}
+
+  .btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  button{font-family:var(--sans);font-size:12.5px;padding:6px 11px;border-radius:3px;
+         border:1px solid var(--rule);background:var(--panel);color:var(--ink);cursor:pointer}
+  button:hover:not(:disabled){border-color:var(--ink-soft)}
+  button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  button:disabled{opacity:.45;cursor:default}
+  button.go{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:500}
+  button.wide{width:100%}
+  button.mini{font-size:11px;padding:2px 7px}
+
+  .msg{margin-top:9px;font-size:12.5px;min-height:3.4em;color:var(--ink-soft)}
+  .msg.err{color:var(--warn)}
+  .msg.ok{color:var(--accent)}
+
+  .sheet{position:fixed;top:50px;right:14px;width:min(470px,calc(100vw - 28px));
+         max-height:calc(100dvh - 66px);overflow:auto;background:var(--panel);
+         border:1px solid var(--ink-soft);border-radius:4px;padding:16px 18px 18px;
+         box-shadow:0 8px 28px rgba(14,31,42,.16);display:none;z-index:9}
+  .sheet.open{display:block}
+  .sheet h2{font-size:14px;font-weight:600;margin:0 0 4px}
+  .sheet h3{font-size:12.5px;font-weight:600;margin:14px 0 5px;color:var(--accent)}
+  .sheet ol{margin:0;padding-left:19px;font-size:13px;color:var(--ink-soft)}
+  .sheet li{margin-bottom:5px}
+  .sheet li b{color:var(--ink);font-weight:500}
+  .sheet .warn{background:#F6E9E6;border-left:3px solid var(--warn);padding:8px 11px;
+               font-size:12.5px;margin:12px 0 0;color:var(--ink)}
+
+  .hide{display:none !important}
+  @media(max-width:880px){
+    body{overflow:auto} .app{height:auto;min-height:100dvh}
+    .main{grid-template-columns:1fr} .col{overflow:visible}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <h1>Encryption workshop</h1>
+    <div class="tabs" role="tablist">
+      <button id="tabSym" role="tab" aria-selected="true">Symmetric · AES</button>
+      <button id="tabAsym" role="tab" aria-selected="false">Asymmetric · RSA</button>
+    </div>
+    <div class="spacer"></div>
+    <button id="help">Activity steps</button>
+  </div>
+
+  <div class="banner" id="banner">
+    Your browser is blocking its cryptography engine, which usually means this file was opened
+    directly from disk. Serve the folder instead — <code>python3 -m http.server</code> — and
+    open <code>http://localhost:8000</code>.
+  </div>
+
+  <div class="main">
+
+    <!-- ================= LEFT: KEYS ================= -->
+    <div class="col">
+      <div class="card" id="symKeys">
+        <h2><span><span class="num">Step 1</span> · Your secret key</span></h2>
+        <button class="go wide" id="genSym">Generate a new AES-256 key</button>
+        <p class="lbl" style="margin-top:10px">Key <span class="hint">the same key locks and unlocks</span></p>
+        <textarea id="symKey" rows="2" spellcheck="false"
+          placeholder="Generate one, or paste a key you were sent"></textarea>
+        <div class="btns"><button class="mini" data-copy="symKey">Copy key</button></div>
+      </div>
+
+      <div class="card hide" id="asymKeys">
+        <h2><span><span class="num">Step 1</span> · Your key pair</span></h2>
+        <button class="go wide" id="genAsym">Generate a new RSA-2048 key pair</button>
+        <p class="lbl" style="margin-top:10px">Public key
+          <span class="hint">email this to everyone</span></p>
+        <textarea id="pubKey" rows="5" spellcheck="false" readonly
+          placeholder="Generate a pair to see your public key"></textarea>
+        <div class="btns"><button class="mini" data-copy="pubKey">Copy public key</button></div>
+        <p class="lbl" style="margin-top:12px">Private key
+          <span class="hint">never share this, ever</span></p>
+        <textarea id="privKey" rows="5" spellcheck="false" readonly
+          placeholder="Generate a pair to see your private key"></textarea>
+        <div class="btns"><button class="mini" data-copy="privKey">Copy private key</button></div>
+      </div>
+    </div>
+
+    <!-- ================= RIGHT: WORK AREA ================= -->
+    <div class="col">
+      <div class="card hide" id="keyInUse">
+        <h2><span><span class="num">Step 2</span> · Key to use</span></h2>
+        <p class="lbl">Paste the recipient's <b>public</b> key to encrypt, or your own
+          <b>private</b> key to decrypt</p>
+        <textarea id="useKey" rows="4" spellcheck="false"
+          placeholder="-----BEGIN PUBLIC KEY----- ..."></textarea>
+      </div>
+
+      <div class="card grow">
+        <h2>
+          <span><span class="num" id="inNum">Step 2</span> · Input</span>
+          <span class="cnt" id="counter"></span>
+        </h2>
+        <textarea id="input" spellcheck="false"
+          placeholder="Type a message to encrypt, or paste ciphertext to decrypt"></textarea>
+        <div class="btns">
+          <button class="go" id="doEnc">Encrypt</button>
+          <button class="go" id="doDec">Decrypt</button>
+          <button id="swap">↑ Send output back to input</button>
+          <button id="clear">Clear</button>
+        </div>
+      </div>
+
+      <div class="card grow">
+        <h2><span><span class="num" id="outNum">Step 3</span> · Output</span></h2>
+        <textarea id="output" readonly spellcheck="false"></textarea>
+        <div class="btns"><button class="mini" data-copy="output">Copy output</button></div>
+        <p class="msg" id="msg"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet" role="dialog" aria-label="Activity steps">
+  <h2>Classroom activity</h2>
+  <h3>Symmetric — one shared secret</h3>
+  <ol>
+    <li>One partner generates a key and <b>emails it</b> to the other.</li>
+    <li>Sender: type a message, paste the key, press <b>Encrypt</b>. Email the output.</li>
+    <li>Receiver: paste the ciphertext as input, paste the <b>same key</b>, press <b>Decrypt</b>.</li>
+    <li>Swap roles and repeat. The key never changes — only which box you fill.</li>
+  </ol>
+  <p class="warn"><b>The point of this half:</b> that key travelled by email. Anyone who read
+  the email — the school's mail server, an admin, someone at the next desk — can now read
+  every message. Ask the class how you would fix this. That question is the reason the next
+  tab exists.</p>
+
+  <h3>Asymmetric — two keys, only one is secret</h3>
+  <ol>
+    <li>Everyone generates a key pair and <b>emails their public key</b> to the class.
+      Private keys stay on the machine.</li>
+    <li>To write to Priya, paste <b>Priya's</b> public key into "Key to use", type your
+      message, press <b>Encrypt</b>. Email the output to her.</li>
+    <li>Priya pastes the ciphertext as input, pastes <b>her own private key</b>, presses
+      <b>Decrypt</b>.</li>
+    <li>Now try to break it: take a message meant for someone else and attempt to decrypt it
+      with your private key. It fails.</li>
+  </ol>
+  <p class="warn"><b>The trap to watch for:</b> students encrypt with their <i>own</i> public
+  key instead of the recipient's. It appears to work, and then nobody but them can open it.
+  You encrypt with the key belonging to the person you are writing <i>to</i>.</p>
+
+  <h3>Two things worth asking</h3>
+  <ol>
+    <li>Encrypt the same words twice with RSA. The ciphertext differs each time. Why would
+      that be a good thing?</li>
+    <li>Try a long RSA message. It refuses past 190 bytes — which is why real systems use RSA
+      to encrypt an AES key, then use AES for the message itself.</li>
+  </ol>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var S = window.crypto && window.crypto.subtle;
+  var enc = new TextEncoder(), dec = new TextDecoder();
+  var RSA_MAX = 190;
+  function $(i){ return document.getElementById(i); }
+
+  if(!S){ $('banner').classList.add('show');
+    ['genSym','genAsym','doEnc','doDec'].forEach(function(i){ $(i).disabled = true; }); }
+
+  function b64(buf){
+    var b = new Uint8Array(buf), s = '';
+    for(var i=0;i<b.length;i++) s += String.fromCharCode(b[i]);
+    return btoa(s);
+  }
+  function unb64(str){
+    var s = atob(String(str).replace(/[\s\r\n]+/g,''));
+    var a = new Uint8Array(s.length);
+    for(var i=0;i<s.length;i++) a[i] = s.charCodeAt(i);
+    return a;
+  }
+  function pem(label, buf){
+    return '-----BEGIN '+label+'-----\n' +
+      b64(buf).replace(/(.{64})/g, '$1\n').replace(/\n$/,'') +
+      '\n-----END '+label+'-----';
+  }
+  function unpem(s){ return unb64(s.replace(/-----[^-]*-----/g, '')); }
+
+  var mode = 'sym';
+  function say(text, kind){
+    var m = $('msg'); m.textContent = text || '';
+    m.className = 'msg' + (kind ? ' '+kind : '');
+  }
+
+  function setMode(m){
+    mode = m;
+    document.body.classList.toggle('asym', m === 'asym');
+    $('tabSym').setAttribute('aria-selected', m==='sym');
+    $('tabAsym').setAttribute('aria-selected', m==='asym');
+    $('symKeys').classList.toggle('hide', m!=='sym');
+    $('asymKeys').classList.toggle('hide', m!=='asym');
+    $('keyInUse').classList.toggle('hide', m!=='asym');
+    $('inNum').textContent = m==='sym' ? 'Step 2' : 'Step 3';
+    $('outNum').textContent = m==='sym' ? 'Step 3' : 'Step 4';
+    $('input').value = ''; $('output').value = '';
+    say(m==='sym'
+      ? 'One key does both jobs. Generate it, then encrypt or decrypt.'
+      : 'Encrypt with the recipient\u2019s public key. Decrypt with your own private key.');
+    count();
+  }
+  $('tabSym').addEventListener('click', function(){ setMode('sym'); });
+  $('tabAsym').addEventListener('click', function(){ setMode('asym'); });
+
+  function count(){
+    var c = $('counter');
+    if(mode !== 'asym'){ c.textContent = ''; c.classList.remove('over'); return; }
+    var n = enc.encode($('input').value).length;
+    c.textContent = n + ' / ' + RSA_MAX + ' bytes';
+    c.classList.toggle('over', n > RSA_MAX);
+  }
+  $('input').addEventListener('input', count);
+
+  $('genSym').addEventListener('click', async function(){
+    try{
+      var k = await S.generateKey({name:'AES-GCM', length:256}, true, ['encrypt','decrypt']);
+      $('symKey').value = b64(await S.exportKey('raw', k));
+      say('New 256-bit key made. Both partners need this exact text.', 'ok');
+    }catch(e){ say('Could not generate a key: '+e.message, 'err'); }
+  });
+
+  $('genAsym').addEventListener('click', async function(){
+    say('Generating \u2014 this takes a moment\u2026');
+    try{
+      var kp = await S.generateKey(
+        {name:'RSA-OAEP', modulusLength:2048,
+         publicExponent:new Uint8Array([1,0,1]), hash:'SHA-256'},
+        true, ['encrypt','decrypt']);
+      $('pubKey').value  = pem('PUBLIC KEY',  await S.exportKey('spki',  kp.publicKey));
+      $('privKey').value = pem('PRIVATE KEY', await S.exportKey('pkcs8', kp.privateKey));
+      say('Pair created. Share the public key freely; keep the private key on this machine.', 'ok');
+    }catch(e){ say('Could not generate a pair: '+e.message, 'err'); }
+  });
+
+  async function symEncrypt(text, keyB64){
+    var k = await S.importKey('raw', unb64(keyB64), 'AES-GCM', false, ['encrypt']);
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var ct = new Uint8Array(await S.encrypt({name:'AES-GCM', iv:iv}, k, enc.encode(text)));
+    var out = new Uint8Array(12 + ct.length);
+    out.set(iv); out.set(ct, 12);
+    return b64(out);
+  }
+  async function symDecrypt(blob, keyB64){
+    var k = await S.importKey('raw', unb64(keyB64), 'AES-GCM', false, ['decrypt']);
+    var d = unb64(blob);
+    return dec.decode(await S.decrypt({name:'AES-GCM', iv:d.slice(0,12)}, k, d.slice(12)));
+  }
+
+  $('doEnc').addEventListener('click', async function(){
+    var text = $('input').value;
+    if(!text){ return say('Type something into the input box first.', 'err'); }
+    $('output').value = '';
+    try{
+      if(mode === 'sym'){
+        var key = $('symKey').value.trim();
+        if(!key) return say('No key yet. Generate one, or paste the key you were sent.', 'err');
+        $('output').value = await symEncrypt(text, key);
+        say('Encrypted. Send this ciphertext to your partner \u2014 they need the same key to read it.', 'ok');
+      } else {
+        var pk = $('useKey').value.trim();
+        if(!pk) return say('Paste the recipient\u2019s public key into "Key to use" first.', 'err');
+        if(/PRIVATE KEY/.test(pk))
+          return say('That is a private key. To encrypt you need the public key of the person you are writing to.', 'err');
+        var n = enc.encode(text).length;
+        if(n > RSA_MAX)
+          return say('Too long: '+n+' bytes, and RSA-2048 can only carry '+RSA_MAX+
+            '. This is exactly why real systems encrypt an AES key with RSA, then use AES for the message.', 'err');
+        var key2 = await S.importKey('spki', unpem(pk), {name:'RSA-OAEP', hash:'SHA-256'}, false, ['encrypt']);
+        $('output').value = b64(await S.encrypt({name:'RSA-OAEP'}, key2, enc.encode(text)));
+        say('Encrypted with their public key. Only their private key can open it \u2014 not even yours.', 'ok');
+      }
+    }catch(e){
+      say(mode==='sym'
+        ? 'That key did not work. It should be 44 characters ending in "=".'
+        : 'That key could not be read. Copy the whole block including the BEGIN and END lines.', 'err');
+    }
+  });
+
+  $('doDec').addEventListener('click', async function(){
+    var blob = $('input').value.trim();
+    if(!blob){ return say('Paste some ciphertext into the input box first.', 'err'); }
+    $('output').value = '';
+    try{
+      if(mode === 'sym'){
+        var key = $('symKey').value.trim();
+        if(!key) return say('Paste the key your partner sent you.', 'err');
+        $('output').value = await symDecrypt(blob, key);
+        say('Decrypted with the very same key that locked it.', 'ok');
+      } else {
+        var sk = $('useKey').value.trim();
+        if(!sk) return say('Paste your own private key into "Key to use".', 'err');
+        if(/PUBLIC KEY/.test(sk))
+          return say('That is a public key. Public keys can only lock, never unlock. You need your own private key here.', 'err');
+        var k = await S.importKey('pkcs8', unpem(sk), {name:'RSA-OAEP', hash:'SHA-256'}, false, ['decrypt']);
+        $('output').value = dec.decode(await S.decrypt({name:'RSA-OAEP'}, k, unb64(blob)));
+        say('Decrypted. Your private key never left this machine.', 'ok');
+      }
+    }catch(e){
+      say(mode==='sym'
+        ? 'Failed. Either the key is wrong, or the ciphertext was altered \u2014 even one character breaks it.'
+        : 'Failed. This message was almost certainly encrypted with someone else\u2019s public key, so only their private key opens it.', 'err');
+    }
+  });
+
+  $('swap').addEventListener('click', function(){
+    if(!$('output').value) return say('Nothing in the output box to move yet.', 'err');
+    $('input').value = $('output').value; $('output').value = '';
+    say('Moved. Now press the other button to reverse it.');
+    count();
+  });
+  $('clear').addEventListener('click', function(){
+    $('input').value = ''; $('output').value = ''; say(''); count();
+  });
+
+  document.querySelectorAll('button[data-copy]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var t = $(b.dataset.copy);
+      if(!t.value) return say('Nothing to copy yet.', 'err');
+      var done = function(){ var o = b.textContent; b.textContent = 'Copied'; 
+        setTimeout(function(){ b.textContent = o; }, 1100); };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t.value).then(done, function(){
+          t.select(); document.execCommand('copy'); done();
+        });
+      } else { t.select(); document.execCommand('copy'); done(); }
+    });
+  });
+
+  var sheet = $('sheet'), help = $('help');
+  help.addEventListener('click', function(){ sheet.classList.toggle('open'); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') sheet.classList.remove('open');
+  });
+
+  setMode('sym');
+})();
+</script>
+</body>
+</html>
