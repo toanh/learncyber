@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GradeVault — SQL Injection Range</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e14;
+    --bg2:#0e141d;
+    --panel:#121a25;
+    --panel2:#16202e;
+    --line:#233043;
+    --line-soft:#1b2635;
+    --ink:#e6edf5;
+    --muted:#8497ad;
+    --dim:#5a6b81;
+    --neon:#38f5c0;
+    --neon-dim:#1c7a63;
+    --pink:#ff4d8d;
+    --amber:#ffc234;
+    --violet:#a988ff;
+    --blue:#4aa8ff;
+    --danger:#ff5b6a;
+    --ok:#38f5c0;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:"Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:
+      radial-gradient(1200px 700px at 80% -10%,rgba(56,245,192,.06),transparent 60%),
+      radial-gradient(900px 600px at -5% 110%,rgba(169,136,255,.07),transparent 55%),
+      var(--bg);
+    color:var(--ink);font-family:var(--sans);line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--neon)}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 20px 60px;display:flex;flex-direction:column;gap:16px}
+
+  /* ---------- header ---------- */
+  header.top{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    border:1px solid var(--line);border-radius:14px;padding:14px 18px;
+    background:linear-gradient(180deg,var(--panel),var(--bg2));
+    box-shadow:0 1px 0 rgba(255,255,255,.02) inset;
+  }
+  .logo{display:flex;align-items:center;gap:11px}
+  .logo .mark{
+    width:40px;height:40px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--neon),#12b48a);color:#04120d;font-family:var(--mono);
+    font-weight:700;font-size:19px;box-shadow:0 0 22px rgba(56,245,192,.35);
+  }
+  .logo h1{margin:0;font-size:1.12rem;font-weight:700;letter-spacing:-.01em}
+  .logo .tag{margin:0;font-size:.74rem;color:var(--muted);font-family:var(--mono);letter-spacing:.02em}
+  .spacer{flex:1}
+  .score{
+    font-family:var(--mono);font-size:.78rem;color:var(--muted);text-align:right;line-height:1.35;
+  }
+  .score b{color:var(--neon);font-size:1.05rem}
+  .topbtns{display:flex;gap:8px}
+  button{font-family:var(--sans);cursor:pointer}
+  .btn{
+    font-size:.82rem;font-weight:500;padding:.5rem .8rem;border-radius:9px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+    transition:border-color .15s,background .15s,transform .05s;
+  }
+  .btn:hover{border-color:var(--neon-dim);background:#182534}
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:transparent}
+
+  .warnbar{
+    display:none;border:1px solid #6d4200;background:#2a1c02;color:var(--amber);
+    border-radius:12px;padding:12px 16px;font-size:.85rem;font-family:var(--mono);
+  }
+  .warnbar.show{display:block}
+  .warnbar code{background:#000;padding:1px 6px;border-radius:4px;color:#ffe9a8}
+
+  .ethics{
+    border:1px solid var(--line-soft);border-radius:12px;padding:10px 14px;
+    background:rgba(255,77,141,.05);font-size:.8rem;color:var(--muted);
+    display:flex;gap:9px;align-items:flex-start;
+  }
+  .ethics b{color:var(--pink)}
+
+  /* ---------- layout ---------- */
+  .grid{display:grid;grid-template-columns:270px 1fr;gap:16px;align-items:start}
+
+  /* ---------- mission rail ---------- */
+  .rail{display:flex;flex-direction:column;gap:10px;position:sticky;top:16px}
+  .rail .railhd{
+    font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--dim);padding:0 4px;
+  }
+  .mission{
+    text-align:left;width:100%;border:1px solid var(--line);border-radius:12px;
+    background:var(--panel);padding:12px 13px;display:flex;gap:11px;align-items:flex-start;
+    transition:border-color .15s,background .15s;color:var(--ink);
+  }
+  .mission:hover{border-color:var(--neon-dim)}
+  .mission.active{border-color:var(--neon);background:#132420;box-shadow:0 0 0 1px var(--neon-dim) inset}
+  .mission .ix{
+    width:26px;height:26px;border-radius:7px;flex:0 0 auto;display:grid;place-items:center;
+    font-family:var(--mono);font-size:.8rem;font-weight:700;border:1px solid var(--line);
+    color:var(--muted);background:var(--bg2);
+  }
+  .mission.done .ix{background:var(--neon);color:#04120d;border-color:var(--neon)}
+  .mission .mt{font-size:.85rem;font-weight:600;line-height:1.25}
+  .mission .md{font-size:.72rem;color:var(--muted);margin-top:2px;font-family:var(--mono)}
+  .mission .flagchip{margin-top:6px;font-family:var(--mono);font-size:.68rem;color:var(--neon);
+    display:none;word-break:break-all}
+  .mission.done .flagchip{display:block}
+
+  /* ---------- stage ---------- */
+  .stage{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .card{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
+  .card .hd{
+    padding:14px 18px;border-bottom:1px solid var(--line-soft);
+    background:linear-gradient(180deg,var(--panel2),transparent);
+  }
+  .card .hd .eyebrow{
+    font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--neon);margin:0 0 4px;
+  }
+  .card .hd h2{margin:0;font-size:1.15rem;font-weight:700;letter-spacing:-.01em}
+  .card .hd p{margin:.5rem 0 0;font-size:.88rem;color:var(--muted);max-width:64ch}
+  .card .bd{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+
+  .objective{
+    display:flex;gap:10px;align-items:flex-start;font-size:.84rem;
+    border:1px dashed var(--line);border-radius:10px;padding:10px 12px;background:var(--bg2);
+  }
+  .objective .k{font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;color:var(--amber);
+    text-transform:uppercase;padding-top:2px;flex:0 0 auto}
+
+  label.fld{display:block;font-size:.78rem;font-weight:500;color:var(--muted);margin-bottom:5px}
+  .inrow{display:flex;flex-direction:column;gap:11px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  input[type=text],input[type=password],textarea{
+    width:100%;font-family:var(--mono);font-size:.9rem;color:var(--ink);
+    background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:.6rem .7rem;
+    transition:border-color .12s,box-shadow .12s;
+  }
+  input:focus,textarea:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 3px rgba(56,245,192,.14)}
+  textarea{resize:vertical;min-height:78px;line-height:1.5}
+
+  .actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .btn.go{
+    background:linear-gradient(135deg,var(--neon),#17c496);color:#04120d;border:none;font-weight:700;
+    padding:.6rem 1.1rem;box-shadow:0 0 18px rgba(56,245,192,.28)
+  }
+  .btn.go:hover{filter:brightness(1.06)}
+  .payloads{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+  .chip{
+    font-family:var(--mono);font-size:.72rem;padding:.32rem .55rem;border-radius:7px;
+    border:1px solid var(--line);background:var(--bg2);color:var(--violet);
+  }
+  .chip:hover{border-color:var(--violet);background:#1c1830}
+
+  /* query preview */
+  .qbox{
+    border:1px solid var(--line);border-radius:10px;background:#070b11;overflow:hidden;
+  }
+  .qbox .qhd{
+    font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;color:var(--dim);
+    padding:7px 12px;border-bottom:1px solid var(--line-soft);text-transform:uppercase;
+    display:flex;justify-content:space-between;
+  }
+  .qbox pre{
+    margin:0;padding:12px 14px;font-family:var(--mono);font-size:.86rem;line-height:1.55;
+    white-space:pre-wrap;word-break:break-word;color:#cfe3ff;
+  }
+  .kw{color:var(--pink);font-weight:500}
+  .str{color:var(--amber)}
+  .inj{background:rgba(255,77,141,.18);color:#ffd6e5;border-radius:3px;padding:0 2px;
+    outline:1px solid rgba(255,77,141,.4)}
+
+  /* result */
+  .result{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg2)}
+  .result .rhd{
+    font-family:var(--mono);font-size:.68rem;color:var(--dim);padding:8px 12px;
+    border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;letter-spacing:.06em;
+  }
+  .tablewrap{overflow:auto;max-height:340px}
+  table{border-collapse:collapse;width:100%;font-size:.82rem}
+  th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+  th{font-family:var(--mono);font-size:.7rem;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--neon);background:#0c141d;position:sticky;top:0}
+  td{font-family:var(--mono);color:var(--ink)}
+  tr:hover td{background:rgba(56,245,192,.03)}
+  .empty{padding:18px;color:var(--dim);font-family:var(--mono);font-size:.82rem;text-align:center}
+  .sqlerr{padding:14px;color:var(--danger);font-family:var(--mono);font-size:.82rem;
+    background:rgba(255,91,106,.06);white-space:pre-wrap}
+
+  .status{font-size:.85rem;font-family:var(--mono);min-height:1.4em;display:flex;align-items:center;gap:8px}
+  .status.ok{color:var(--ok)} .status.err{color:var(--danger)} .status.info{color:var(--muted)}
+
+  details.hint{border:1px solid var(--line);border-radius:9px;background:var(--bg2);padding:0}
+  details.hint>summary{
+    list-style:none;cursor:pointer;padding:10px 13px;font-size:.8rem;color:var(--amber);
+    font-weight:500;display:flex;align-items:center;gap:8px;
+  }
+  details.hint>summary::-webkit-details-marker{display:none}
+  details.hint[open]>summary{border-bottom:1px solid var(--line-soft)}
+  details.hint .hbody{padding:11px 13px;font-size:.83rem;color:var(--muted)}
+  details.hint code{font-family:var(--mono);background:#070b11;padding:1px 5px;border-radius:4px;color:#ffd6e5}
+  details.hint ul{margin:.4rem 0 0;padding-left:1.2rem}
+  details.hint li{margin:.3rem 0}
+
+  /* saved solution panel (shown once a mission is solved) */
+  .solved-note{border:1px solid var(--neon-dim);border-radius:10px;background:rgba(56,245,192,.06);
+    padding:11px 13px;display:flex;flex-direction:column;gap:7px}
+  .solved-note .sn-hd{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;color:var(--neon);
+    text-transform:uppercase;font-weight:700}
+  .solved-note .sn-row{display:flex;gap:10px;align-items:baseline;font-size:.82rem;flex-wrap:wrap}
+  .solved-note .sn-k{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--dim);flex:0 0 66px}
+  .solved-note .sn-v{color:var(--ink);min-width:0;word-break:break-word}
+  .solved-note .sn-v.flag{font-family:var(--mono);color:var(--neon)}
+  .solved-note .sn-v code{font-family:var(--mono);background:#070b11;padding:1px 6px;border-radius:4px;
+    color:#ffd6e5;font-size:.78rem;word-break:break-all}
+
+  /* schema / console modal */
+  .sheet-bg{position:fixed;inset:0;background:rgba(3,6,10,.7);backdrop-filter:blur(2px);
+    display:none;z-index:40;align-items:flex-start;justify-content:center;padding:5vh 16px}
+  .sheet-bg.open{display:flex}
+  .sheet{
+    width:min(720px,100%);max-height:88vh;overflow:auto;background:var(--panel);
+    border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.5);
+  }
+  .sheet .shd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line-soft);
+    position:sticky;top:0;background:var(--panel);z-index:1}
+  .sheet .shd h3{margin:0;font-size:1rem}
+  .sheet .sbd{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+  .schtab{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .schtab .stt{font-family:var(--mono);font-size:.82rem;color:var(--neon);padding:8px 12px;
+    background:var(--bg2);border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between}
+  .schtab .stc{padding:9px 12px;font-family:var(--mono);font-size:.78rem;color:var(--muted);
+    display:flex;flex-wrap:wrap;gap:6px}
+  .schtab .col{border:1px solid var(--line-soft);border-radius:6px;padding:2px 7px;background:#0c141d}
+  .schtab .col b{color:var(--ink);font-weight:500}
+  .schtab .col span{color:var(--dim)}
+
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(140%);
+    background:linear-gradient(135deg,#0f2b24,#0a1a16);border:1px solid var(--neon);
+    color:var(--ink);padding:14px 20px;border-radius:12px;z-index:60;max-width:min(520px,92vw);
+    box-shadow:0 0 40px rgba(56,245,192,.35);transition:transform .45s cubic-bezier(.2,.9,.3,1.2);
+    display:flex;gap:13px;align-items:center;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast .big{font-size:1.7rem}
+  .toast .tt{font-weight:700;color:var(--neon)}
+  .toast .ts{font-size:.82rem;color:var(--muted);font-family:var(--mono)}
+
+  footer{color:var(--dim);font-size:.76rem;text-align:center;font-family:var(--mono);padding-top:6px}
+
+  @media(max-width:820px){
+    .grid{grid-template-columns:1fr}
+    .rail{position:static;flex-direction:row;overflow:auto;padding-bottom:4px}
+    .mission{min-width:220px}
+    .payloads{margin-left:0;width:100%}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="logo">
+      <div class="mark">GV</div>
+      <div>
+        <h1>GradeVault <span style="color:var(--dim);font-weight:400">// Injection Range</span></h1>
+        <p class="tag">riverside-high.edu · student records portal · v2.3 (unpatched)</p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="score">
+      SCORE <b id="scoreVal">0</b> / <span id="scoreMax">4</span> flags<br>
+      <span id="rankTxt" style="color:var(--muted)">rank: script kiddie</span>
+    </div>
+    <div class="topbtns">
+      <button class="btn ghost" id="btnSchema">⌗ Schema</button>
+      <button class="btn ghost" id="btnConsole">&gt;_ SQL Console</button>
+      <button class="btn ghost" id="btnReset">↺ Reset DB</button>
+    </div>
+  </header>
+
+  <div class="warnbar" id="warnbar">
+    ⚠ The SQLite engine failed to load. It streams from a CDN, so you need an internet
+    connection the first time. If you opened this file straight from disk it should still work —
+    try refreshing, or serve the folder with <code>python -m http.server</code>.
+  </div>
+
+  <div class="ethics">
+    <span>🛡️</span>
+    <div><b>White-hat rules.</b> Everything here — the database, the "server", every record — lives
+    only inside your browser tab. Nothing leaves your computer. These exact tricks are illegal
+    against systems you don't own. You're a recruit stress-testing a <i>fake</i> school portal so you
+    learn to <i>defend</i> real ones.</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- ============ MISSION RAIL ============ -->
+    <nav class="rail" id="rail">
+      <div class="railhd">◈ Missions</div>
+      <!-- injected by JS -->
+    </nav>
+
+    <!-- ============ STAGE ============ -->
+    <main class="stage" id="stage"><!-- injected by JS --></main>
+  </div>
+
+  <footer>GradeVault Injection Range · offline sandbox · powered by sql.js (SQLite/WASM) in-browser</footer>
+</div>
+
+<!-- schema sheet -->
+<div class="sheet-bg" id="schemaSheet">
+  <div class="sheet">
+    <div class="shd">
+      <span style="font-family:var(--mono);color:var(--neon)">⌗</span>
+      <h3>Database schema — <span style="color:var(--muted);font-weight:400;font-family:var(--mono);font-size:.85rem">recon before you strike</span></h3>
+      <div class="spacer" style="flex:1"></div>
+      <button class="btn ghost" data-close>✕</button>
+    </div>
+    <div class="sbd" id="schemaBody"></div>
+  </div>
+</div>
+
+<!-- console sheet -->
+<div class="sheet-bg" id="consoleSheet">
+  <div class="sheet">
+    <div class="shd">
+      <span style="font-family:var(--mono);color:var(--neon)">&gt;_</span>
+      <h3>Free SQL Console <span style="color:var(--muted);font-weight:400;font-family:var(--mono);font-size:.85rem">run anything against the live DB</span></h3>
+      <div class="spacer" style="flex:1"></div>
+      <button class="btn ghost" data-close>✕</button>
+    </div>
+    <div class="sbd">
+      <textarea id="consoleSql" spellcheck="false" style="min-height:96px">SELECT name FROM sqlite_master WHERE type='table';</textarea>
+      <div class="actions">
+        <button class="btn go" id="consoleRun">▶ Run query</button>
+        <span class="chip" data-consq="SELECT * FROM students;">all students</span>
+        <span class="chip" data-consq="SELECT * FROM users;">all users</span>
+        <span class="chip" data-consq="SELECT * FROM secrets;">secrets</span>
+      </div>
+      <div id="consoleResult"></div>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div class="toast" id="toast">
+  <div class="big">🚩</div>
+  <div>
+    <div class="tt" id="toastTitle">Flag captured!</div>
+    <div class="ts" id="toastSub"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<script>
+"use strict";
+(function(){
+
+/* ============================================================
+   1. DATABASE  — seeded fresh each load, lives only in memory
+   ============================================================ */
+var SQL=null, db=null;
+
+var SEED = [
+  "CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT, password TEXT, role TEXT, flag TEXT);",
+  "INSERT INTO users VALUES (1,'j.blake','R!verSide_Adm1n','admin','GV{l0gin_b3comes_a_door}');",
+  "INSERT INTO users VALUES (2,'m.chen','hunter2','student',NULL);",
+  "INSERT INTO users VALUES (3,'a.okafor','soccer#7','student',NULL);",
+  "INSERT INTO users VALUES (4,'t.nguyen','p@ssword1','teacher',NULL);",
+
+  "CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT, homeroom TEXT, gpa TEXT);",
+  "INSERT INTO students VALUES (1,'Maya Chen','12-B','3.9');",
+  "INSERT INTO students VALUES (2,'Amara Okafor','12-B','3.7');",
+  "INSERT INTO students VALUES (3,'Leo Martins','12-A','2.4');",
+  "INSERT INTO students VALUES (4,'Priya Shah','12-C','4.0');",
+  "INSERT INTO students VALUES (5,'Danny Rivera','12-A','3.1');",
+  "INSERT INTO students VALUES (6,'Grace Kim','12-C','3.8');",
+  "INSERT INTO students VALUES (7,'Omar Haddad','12-B','2.9');",
+  "INSERT INTO students VALUES (8,'Ivy Sokolov','12-A','3.5');",
+
+  "CREATE TABLE secrets (id INTEGER PRIMARY KEY, label TEXT, value TEXT);",
+  "INSERT INTO secrets VALUES (1,'principal_master_pin','7731');",
+  "INSERT INTO secrets VALUES (2,'exam_answer_key','B,C,A,D,A,C,B,D');",
+  "INSERT INTO secrets VALUES (3,'the_flag','GV{un10n_s3lect_1s_op}');"
+];
+
+function buildDB(){
+  if(db) db.close();
+  db = new SQL.Database();
+  SEED.forEach(function(s){ db.run(s); });
+}
+
+/* run a raw query; returns {cols, rows} or {error} */
+function query(sql){
+  try{
+    var res = db.exec(sql);
+    if(!res.length) return {cols:[], rows:[]};
+    return {cols:res[0].columns, rows:res[0].values};
+  }catch(e){
+    return {error:String(e.message||e)};
+  }
+}
+
+var TOTAL_STUDENTS = 8;
+
+/* ============================================================
+   2. MISSIONS
+   ============================================================ */
+var MISSIONS = [
+  {
+    id:"login",
+    tab:"MISSION 01",
+    icon:"1",
+    title:"Bypass the login",
+    short:"auth bypass",
+    intro:"The staff login checks your username and password by dropping them straight into a SQL query. "+
+          "Log in as the administrator <b>without knowing the password</b>.",
+    objective:"Get the query to return a row where <code>role = 'admin'</code>.",
+    kind:"login",
+    hint:{
+      title:"Stuck? Peek at how the query is built",
+      html:"The server runs:<br><code>SELECT username, role, flag FROM users WHERE username='<i>YOU</i>' AND password='<i>YOU</i>'</code>"+
+           "<ul>"+
+           "<li>Your text lands <i>inside</i> the quotes. What if you close the quote yourself?</li>"+
+           "<li>Try username <code>' OR role='admin' --</code> and any password. The <code>--</code> turns the rest of the line (including the password check) into a comment.</li>"+
+           "<li>Or make the WHERE always true and comment out the password: <code>' OR '1'='1' --</code></li>"+
+           "<li>Note: <code>' OR '1'='1</code> <i>alone</i> won't work here — the <code>AND password=…</code> still runs. You must comment it out.</li>"+
+           "</ul>"
+    }
+  },
+  {
+    id:"leak",
+    tab:"MISSION 02",
+    icon:"2",
+    title:"Dump the student directory",
+    short:"data leak",
+    intro:"The \"find a classmate\" box searches names with a <code>LIKE</code> filter. It's meant to show one "+
+          "or two matches — but the filter is injectable. Leak <b>every</b> student record at once ("+TOTAL_STUDENTS+" rows).",
+    objective:"Make one search return all "+TOTAL_STUDENTS+" students in the table.",
+    kind:"search",
+    hint:{
+      title:"Stuck? Think about what makes the filter always true",
+      html:"The server runs:<br><code>SELECT name, homeroom, gpa FROM students WHERE name LIKE '%<i>YOU</i>%'</code>"+
+           "<ul>"+
+           "<li>Close the string and add a condition that's true for every row.</li>"+
+           "<li>Try <code>' OR '1'='1</code> — now every row matches.</li>"+
+           "<li>The trailing <code>%'</code> is harmless once your <code>OR</code> is always true.</li>"+
+           "</ul>"
+    }
+  },
+  {
+    id:"union",
+    tab:"MISSION 03",
+    icon:"3",
+    title:"UNION into the vault",
+    short:"UNION exfil",
+    intro:"Same search box — but this time steal data from a <b>different table</b>. There's a hidden "+
+          "<code>secrets</code> table holding a flag. Use <code>UNION SELECT</code> to smuggle its rows into the results.",
+    objective:"Get the value <code>GV{...}</code> from the <code>secrets</code> table to appear in the search results.",
+    kind:"search",
+    hint:{
+      title:"Stuck? UNION needs the same number of columns",
+      html:"The search selects <b>3 columns</b>: <code>name, homeroom, gpa</code>. A <code>UNION SELECT</code> must also return 3 columns."+
+           "<ul>"+
+           "<li>Check the <b>Schema</b> panel — the <code>secrets</code> table has <code>id, label, value</code>.</li>"+
+           "<li>Try: <code>' UNION SELECT label, value, id FROM secrets --</code></li>"+
+           "<li>Match the column count or SQLite throws an error. That error is a clue, not a failure!</li>"+
+           "</ul>"
+    }
+  },
+  {
+    id:"crack",
+    tab:"MISSION 04",
+    icon:"4",
+    title:"Crack the answer key",
+    short:"pivot + exfil",
+    intro:"Final job. Chain what you've learned: use the search box's UNION to pull the "+
+          "<b>principal's master PIN</b> and the <b>exam answer key</b> out of the vault in a single query.",
+    objective:"Return both <code>principal_master_pin</code> and <code>exam_answer_key</code> values from <code>secrets</code> in one search.",
+    kind:"search",
+    hint:{
+      title:"Stuck? You don't need every row — just the right ones",
+      html:"You already know how to UNION. Now filter the secrets you pull."+
+           "<ul>"+
+           "<li><code>' UNION SELECT label, value, id FROM secrets WHERE label != 'the_flag' --</code></li>"+
+           "<li>Or grab everything: <code>' UNION SELECT label, value, id FROM secrets --</code> and read off the two values.</li>"+
+           "<li>Real attackers escalate exactly like this: one injectable box becomes a window into the whole database.</li>"+
+           "</ul>"
+    }
+  }
+];
+
+var state = {
+  current:"login",
+  solved:{},            // id -> true when captured
+  flags:{},             // id -> captured flag value
+  inputs:{},            // id -> {user,pass,search} last typed values
+  solutions:{}          // id -> {label,query} the exact query that solved it
+};
+
+/* --- persistence: survive both mission-switching and page reloads --- */
+var STORE_KEY="gradevault.progress.v1";
+function saveState(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      current:state.current, solved:state.solved, flags:state.flags,
+      inputs:state.inputs, solutions:state.solutions
+    }));
+  }catch(e){/* storage may be blocked (private mode / file://) — degrade quietly */}
+}
+function loadState(){
+  try{
+    var raw=localStorage.getItem(STORE_KEY);
+    if(!raw) return;
+    var s=JSON.parse(raw);
+    if(s&&typeof s==="object"){
+      state.current=s.current||state.current;
+      state.solved=s.solved||{};
+      state.flags=s.flags||{};
+      state.inputs=s.inputs||{};
+      state.solutions=s.solutions||{};
+    }
+  }catch(e){/* ignore corrupt/blocked storage */}
+}
+
+var RANKS=["script kiddie","curious recruit","junior pentester","threat hunter","0-day whisperer"];
+
+/* ============================================================
+   3. RENDERING
+   ============================================================ */
+var railEl=document.getElementById("rail");
+var stageEl=document.getElementById("stage");
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+function highlightSQL(sql, injStart, injLen){
+  // build with injected slice highlighted, then keyword/string colour
+  var before=esc(sql.slice(0,injStart));
+  var injRaw=sql.slice(injStart,injStart+injLen);
+  var after=esc(sql.slice(injStart+injLen));
+  function kw(t){
+    return t.replace(/\b(SELECT|FROM|WHERE|AND|OR|UNION|LIKE|NULL|INSERT|INTO|VALUES|ORDER BY)\b/g,
+      '<span class="kw">$1</span>');
+  }
+  var mid = injLen>0 ? '<span class="inj">'+esc(injRaw)+'</span>' : '';
+  return kw(before)+mid+kw(after);
+}
+
+function scoreUpdate(){
+  var n=Object.keys(state.solved).length;
+  document.getElementById("scoreVal").textContent=n;
+  document.getElementById("rankTxt").textContent="rank: "+RANKS[Math.min(n,RANKS.length-1)];
+}
+
+function renderRail(){
+  railEl.innerHTML='<div class="railhd">◈ Missions</div>';
+  MISSIONS.forEach(function(m){
+    var done=!!state.solved[m.id];
+    var b=document.createElement("button");
+    b.className="mission"+(m.id===state.current?" active":"")+(done?" done":"");
+    b.innerHTML=
+      '<span class="ix">'+(done?"✓":m.icon)+'</span>'+
+      '<span><span class="mt">'+m.title+'</span>'+
+      '<span class="md">'+m.tab+' · '+m.short+'</span>'+
+      '<span class="flagchip">🚩 '+esc(state.flags[m.id]||"")+'</span></span>';
+    b.onclick=function(){ state.current=m.id; renderAll(); };
+    railEl.appendChild(b);
+  });
+  scoreUpdate();
+}
+
+/* the saved winning payload + query, shown once a mission is solved */
+function solutionBlock(m){
+  var sol=state.solutions[m.id];
+  if(!sol) return "";
+  var inp=sol.input||{};
+  var typed = m.kind==="login"
+    ? 'username <code>'+esc(inp.user||"")+'</code>'+(inp.pass?' · password <code>'+esc(inp.pass)+'</code>':'')
+    : 'search <code>'+esc(inp.search||"")+'</code>';
+  return '<div class="solved-note" id="solNote">'+
+    '<div class="sn-hd">🚩 Solved — your captured solution</div>'+
+    '<div class="sn-row"><span class="sn-k">flag</span><span class="sn-v flag">'+esc(state.flags[m.id]||"")+'</span></div>'+
+    '<div class="sn-row"><span class="sn-k">you typed</span><span class="sn-v">'+typed+'</span></div>'+
+    '<div class="sn-row"><span class="sn-k">query run</span><span class="sn-v"><code>'+esc(sol.query||"")+'</code></span></div>'+
+    '</div>';
+}
+
+function renderStage(){
+  var m=MISSIONS.filter(function(x){return x.id===state.current;})[0];
+  var solved=!!state.solved[m.id];
+  var sv=state.inputs[m.id]||{};
+  var html=
+    '<section class="card">'+
+      '<div class="hd">'+
+        '<p class="eyebrow">'+m.tab+' · '+m.short+(solved?' · ✓ SOLVED':'')+'</p>'+
+        '<h2>'+m.title+'</h2>'+
+        '<p>'+m.intro+'</p>'+
+      '</div>'+
+      '<div class="bd">'+
+        '<div class="objective"><span class="k">Goal</span><span>'+m.objective+'</span></div>';
+
+  if(m.kind==="login"){
+    html+=
+      '<div class="two">'+
+        '<div><label class="fld">Username</label>'+
+          '<input type="text" id="in_user" spellcheck="false" placeholder="e.g. m.chen" value="'+esc(sv.user||"")+'"></div>'+
+        '<div><label class="fld">Password</label>'+
+          '<input type="text" id="in_pass" spellcheck="false" placeholder="type anything" value="'+esc(sv.pass||"")+'"></div>'+
+      '</div>'+
+      '<div class="actions">'+
+        '<button class="btn go" id="runBtn">↩ Sign in</button>'+
+        '<div class="payloads">'+
+          '<span class="chip" data-inj="user:\' OR \'1\'=\'1\' --">\' OR \'1\'=\'1\' --</span>'+
+          '<span class="chip" data-inj="user:\' OR role=\'admin\' --">\' OR role=\'admin\' --</span>'+
+        '</div>'+
+      '</div>';
+  } else {
+    html+=
+      '<div><label class="fld">Find a classmate by name</label>'+
+        '<input type="text" id="in_search" spellcheck="false" placeholder="e.g. Maya" value="'+esc(sv.search||"")+'"></div>'+
+      '<div class="actions">'+
+        '<button class="btn go" id="runBtn">🔍 Search</button>'+
+        '<div class="payloads">'+
+          '<span class="chip" data-inj="search:\' OR \'1\'=\'1">\' OR \'1\'=\'1</span>'+
+          '<span class="chip" data-inj="search:\' UNION SELECT label, value, id FROM secrets --">\' UNION SELECT … secrets --</span>'+
+        '</div>'+
+      '</div>';
+  }
+
+  html+=
+    '<div class="qbox">'+
+      '<div class="qhd"><span>QUERY SENT TO DATABASE</span><span>sqlite</span></div>'+
+      '<pre id="qpreview"><span style="color:var(--dim)">// your input builds the query here…</span></pre>'+
+    '</div>'+
+    '<div class="status info" id="status">Awaiting input.</div>'+
+    '<div id="resultHolder"></div>'+
+    solutionBlock(m)+
+    '<details class="hint"><summary>💡 '+m.hint.title+'</summary>'+
+      '<div class="hbody">'+m.hint.html+'</div></details>'+
+    '</div></section>';
+
+  stageEl.innerHTML=html;
+  wireStage(m);
+}
+
+function renderResult(r){
+  var holder=document.getElementById("resultHolder");
+  if(!holder) return;
+  if(r.error){
+    holder.innerHTML='<div class="result"><div class="rhd"><span>DATABASE RESPONSE</span><span>error</span></div>'+
+      '<div class="sqlerr">✖ '+esc(r.error)+'\n\nTip: a SQL error often means you\'re close — fix the syntax and try again.</div></div>';
+    return;
+  }
+  var rows=r.rows||[], cols=r.cols||[];
+  var inner='';
+  if(!rows.length){
+    inner='<div class="empty">0 rows returned.</div>';
+  } else {
+    inner='<div class="tablewrap"><table><thead><tr>'+
+      cols.map(function(c){return '<th>'+esc(c)+'</th>';}).join('')+
+      '</tr></thead><tbody>'+
+      rows.map(function(row){return '<tr>'+row.map(function(v){
+        return '<td>'+esc(v==null?'NULL':v)+'</td>';}).join('')+'</tr>';}).join('')+
+      '</tbody></table></div>';
+  }
+  holder.innerHTML='<div class="result"><div class="rhd"><span>DATABASE RESPONSE</span><span>'+
+    rows.length+' row'+(rows.length===1?'':'s')+'</span></div>'+inner+'</div>';
+}
+
+function setStatus(kind,msg){
+  var s=document.getElementById("status");
+  if(!s) return;
+  s.className="status "+kind;
+  s.innerHTML=msg;
+}
+
+/* ============================================================
+   4. WIRING  — build queries, run, check win conditions
+   ============================================================ */
+function wireStage(m){
+  var qprev=document.getElementById("qpreview");
+
+  function buildLogin(){
+    var u=(document.getElementById("in_user")||{}).value||"";
+    var p=(document.getElementById("in_pass")||{}).value||"";
+    var pre="SELECT username, role, flag FROM users WHERE username='";
+    var mid="' AND password='";
+    var tail="'";
+    var sql=pre+u+mid+p+tail;
+    // highlight: two injected slices -> just mark union region roughly by re-render
+    var html='<span class="kw">SELECT</span> username, role, flag <span class="kw">FROM</span> users <span class="kw">WHERE</span> username=<span class="str">\'</span>'+
+      '<span class="inj">'+esc(u||' ')+'</span><span class="str">\'</span> <span class="kw">AND</span> password=<span class="str">\'</span>'+
+      '<span class="inj">'+esc(p||' ')+'</span><span class="str">\'</span>';
+    qprev.innerHTML=html;
+    return sql;
+  }
+  function buildSearch(){
+    var q=(document.getElementById("in_search")||{}).value||"";
+    var sql="SELECT name, homeroom, gpa FROM students WHERE name LIKE '%"+q+"%'";
+    var html='<span class="kw">SELECT</span> name, homeroom, gpa <span class="kw">FROM</span> students <span class="kw">WHERE</span> name <span class="kw">LIKE</span> <span class="str">\'%</span>'+
+      '<span class="inj">'+esc(q||' ')+'</span><span class="str">%\'</span>';
+    qprev.innerHTML=html;
+    return sql;
+  }
+
+  function captureInputs(){
+    state.inputs[m.id]={
+      user:(document.getElementById("in_user")||{}).value||"",
+      pass:(document.getElementById("in_pass")||{}).value||"",
+      search:(document.getElementById("in_search")||{}).value||""
+    };
+    saveState();
+  }
+  function refresh(){ (m.kind==="login"?buildLogin():buildSearch()); captureInputs(); }
+
+  ["in_user","in_pass","in_search"].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.addEventListener("input",refresh);
+    if(el) el.addEventListener("keydown",function(e){ if(e.key==="Enter") run(); });
+  });
+  refresh();
+
+  // payload chips
+  Array.prototype.forEach.call(document.querySelectorAll(".chip[data-inj]"),function(ch){
+    ch.onclick=function(){
+      var spec=ch.getAttribute("data-inj");
+      var i=spec.indexOf(":"); var target=spec.slice(0,i); var val=spec.slice(i+1);
+      if(target==="user"){ var u=document.getElementById("in_user"); if(u){u.value=val;} var pp=document.getElementById("in_pass"); if(pp&&!pp.value)pp.value="x";}
+      if(target==="search"){ var s=document.getElementById("in_search"); if(s)s.value=val; }
+      refresh();
+      var inp=document.getElementById(target==="user"?"in_user":"in_search"); if(inp)inp.focus();
+    };
+  });
+
+  function run(){
+    var sql = m.kind==="login"?buildLogin():buildSearch();
+    captureInputs();
+    var r=query(sql);
+    renderResult(r);
+    if(r.error){ setStatus("err","Query rejected by SQLite. Read the error — then adjust."); return; }
+    checkWin(m,r,sql);
+  }
+
+  var rb=document.getElementById("runBtn");
+  if(rb) rb.onclick=run;
+}
+
+function checkWin(m,r,sql){
+  var rows=r.rows||[], cols=r.cols||[];
+  var flat=rows.map(function(row){return row.map(function(v){return String(v==null?'':v);}).join("");}).join("");
+
+  var win=false, flagVal="";
+
+  if(m.id==="login"){
+    // any returned row whose role column === 'admin'
+    var roleIx=cols.indexOf("role");
+    var flagIx=cols.indexOf("flag");
+    rows.forEach(function(row){
+      if(roleIx>=0 && String(row[roleIx]).toLowerCase()==="admin"){ win=true; flagVal=row[flagIx]||"GV{l0gin_b3comes_a_door}"; }
+    });
+    if(win) setStatus("ok","✔ You're in as <b>admin</b> — the login became a door.");
+    else setStatus("info", rows.length? "That's a valid student/teacher — but not admin. Aim higher.":"No match. The login held. Try bending the query.");
+  }
+
+  if(m.id==="leak"){
+    if(rows.length>=TOTAL_STUDENTS && cols.indexOf("name")>=0){ win=true; flagVal="GV{wh0le_d1rectory_l3aked}"; setStatus("ok","✔ All "+TOTAL_STUDENTS+" students leaked in one query.");}
+    else setStatus("info", rows.length? rows.length+" row(s) — the filter still limited you. Make it always true.":"0 rows. Close the string and force a true condition.");
+  }
+
+  if(m.id==="union"){
+    if(flat.indexOf("GV{un10n_s3lect_1s_op}")>=0){ win=true; flagVal="GV{un10n_s3lect_1s_op}"; setStatus("ok","✔ You pulled the flag out of a table the search never mentions.");}
+    else setStatus("info","No vault data yet. UNION needs a matching column count — check the Schema panel.");
+  }
+
+  if(m.id==="crack"){
+    var hasPin=flat.indexOf("7731")>=0;
+    var hasKey=flat.indexOf("B,C,A,D,A,C,B,D")>=0;
+    if(hasPin&&hasKey){ win=true; flagVal="GV{d1d_the_homework_the_hard_way}"; setStatus("ok","✔ Master PIN <b>7731</b> and the answer key — exfiltrated in one shot.");}
+    else if(hasPin||hasKey) setStatus("info","Got one of the two. Widen your UNION to grab both secrets.");
+    else setStatus("info","Neither secret pulled yet. UNION the secrets table and read the rows.");
+  }
+
+  if(win){
+    var firstTime=!state.solved[m.id];
+    state.solved[m.id]=true;
+    state.flags[m.id]=flagVal;
+    // record the exact winning payload + query so it can be reviewed later
+    state.solutions[m.id]={
+      query:sql||"",
+      input:{
+        user:(state.inputs[m.id]||{}).user||"",
+        pass:(state.inputs[m.id]||{}).pass||"",
+        search:(state.inputs[m.id]||{}).search||""
+      }
+    };
+    saveState();
+    if(firstTime) fireToast(m,flagVal);
+    showSolvedInline(m);   // add the solution panel without wiping the result table
+    renderRail();
+  }
+}
+
+/* insert (or refresh) the solved-solution panel in the current stage without a full re-render */
+function showSolvedInline(m){
+  if(state.current!==m.id) return;
+  var bd=document.querySelector(".stage .bd");
+  if(!bd) return;
+  // update eyebrow to show SOLVED
+  var eb=document.querySelector(".stage .eyebrow");
+  if(eb && eb.textContent.indexOf("SOLVED")<0) eb.textContent=m.tab+" · "+m.short+" · ✓ SOLVED";
+  var existing=document.getElementById("solNote");
+  var tmp=document.createElement("div");
+  tmp.innerHTML=solutionBlock(m);
+  var node=tmp.firstChild;
+  if(!node) return;
+  if(existing){ existing.parentNode.replaceChild(node,existing); }
+  else{
+    var hint=bd.querySelector("details.hint");
+    bd.insertBefore(node, hint || null);
+  }
+}
+
+/* ============================================================
+   5. TOAST + SHEETS
+   ============================================================ */
+var toast=document.getElementById("toast"), toastT=0;
+function fireToast(m,flag){
+  document.getElementById("toastTitle").textContent="Flag captured — "+m.tab+"!";
+  var n=Object.keys(state.solved).length;
+  document.getElementById("toastSub").textContent=flag+"   ·   "+n+"/"+MISSIONS.length+" done";
+  toast.classList.add("show");
+  clearTimeout(toastT);
+  toastT=setTimeout(function(){toast.classList.remove("show");},4200);
+}
+
+function renderSchema(){
+  var body=document.getElementById("schemaBody");
+  var tables=query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;");
+  var html='';
+  (tables.rows||[]).forEach(function(t){
+    var tn=t[0];
+    var info=query("PRAGMA table_info("+tn+");");
+    var cnt=query("SELECT COUNT(*) FROM "+tn+";");
+    var rowN=(cnt.rows&&cnt.rows[0])?cnt.rows[0][0]:"?";
+    html+='<div class="schtab"><div class="stt"><span>'+esc(tn)+'</span><span>'+rowN+' rows</span></div><div class="stc">';
+    (info.rows||[]).forEach(function(c){
+      // PRAGMA columns: cid,name,type,notnull,dflt_value,pk
+      html+='<span class="col"><b>'+esc(c[1])+'</b> <span>'+esc(c[2]||'')+'</span></span>';
+    });
+    html+='</div></div>';
+  });
+  html+='<div style="font-size:.78rem;color:var(--muted);font-family:var(--mono)">'+
+    'Recon tip: in a real attack you\'d discover this schema through error messages and <code style="color:var(--pink)">UNION</code> probing. '+
+    'Here it\'s handed to you so you can focus on the injection technique.</div>';
+  body.innerHTML=html;
+}
+
+function renderConsole(){
+  var sql=document.getElementById("consoleSql").value;
+  var r=query(sql);
+  var holder=document.getElementById("consoleResult");
+  var tmp={error:r.error,rows:r.rows,cols:r.cols};
+  // reuse renderer by temporarily creating a holder-like element
+  if(r.error){
+    holder.innerHTML='<div class="result"><div class="rhd"><span>RESPONSE</span><span>error</span></div><div class="sqlerr">✖ '+esc(r.error)+'</div></div>';
+    return;
+  }
+  var rows=r.rows||[],cols=r.cols||[];
+  var inner = rows.length ?
+    '<div class="tablewrap"><table><thead><tr>'+cols.map(function(c){return '<th>'+esc(c)+'</th>';}).join('')+
+    '</tr></thead><tbody>'+rows.map(function(row){return '<tr>'+row.map(function(v){return '<td>'+esc(v==null?'NULL':v)+'</td>';}).join('')+'</tr>';}).join('')+
+    '</tbody></table></div>' : '<div class="empty">0 rows.</div>';
+  holder.innerHTML='<div class="result"><div class="rhd"><span>RESPONSE</span><span>'+rows.length+' rows</span></div>'+inner+'</div>';
+}
+
+function openSheet(el){ el.classList.add("open"); }
+function closeSheets(){ document.querySelectorAll(".sheet-bg").forEach(function(s){s.classList.remove("open");}); }
+
+/* ============================================================
+   6. TOP BAR + GLOBAL WIRING
+   ============================================================ */
+function renderAll(){ renderRail(); renderStage(); }
+
+document.getElementById("btnSchema").onclick=function(){ renderSchema(); openSheet(document.getElementById("schemaSheet")); };
+document.getElementById("btnConsole").onclick=function(){ openSheet(document.getElementById("consoleSheet")); };
+document.getElementById("btnReset").onclick=function(){
+  if(!confirm("Reset the database AND clear your saved progress, typed answers, and captured flags? This cannot be undone.")) return;
+  buildDB();
+  state.solved={}; state.flags={}; state.inputs={}; state.solutions={};
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  renderAll();
+};
+document.getElementById("consoleRun").onclick=renderConsole;
+document.querySelectorAll("[data-consq]").forEach(function(ch){
+  ch.onclick=function(){ document.getElementById("consoleSql").value=ch.getAttribute("data-consq"); renderConsole(); };
+});
+document.querySelectorAll("[data-close]").forEach(function(b){ b.onclick=closeSheets; });
+document.querySelectorAll(".sheet-bg").forEach(function(bg){
+  bg.addEventListener("click",function(e){ if(e.target===bg) closeSheets(); });
+});
+document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeSheets(); });
+document.getElementById("scoreMax").textContent=MISSIONS.length;
+
+/* ============================================================
+   7. BOOT
+   ============================================================ */
+function boot(){
+  if(typeof initSqlJs!=="function"){ document.getElementById("warnbar").classList.add("show"); return; }
+  initSqlJs({ locateFile:function(f){ return "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/"+f; } })
+    .then(function(_SQL){
+      SQL=_SQL; buildDB(); loadState(); renderAll();
+    })
+    .catch(function(err){
+      document.getElementById("warnbar").classList.add("show");
+      console.error(err);
+    });
+}
+boot();
+
+})();
+</script>
+</body>
+</html>
