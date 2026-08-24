@@ -212,6 +212,16 @@
   details.hint ul{margin:.4rem 0 0;padding-left:1.2rem}
   details.hint li{margin:.3rem 0}
 
+  /* SQL Playground — raw sqlite-shell style output */
+  .cli{
+    font-family:var(--mono);font-size:.82rem;line-height:1.5;white-space:pre;
+    overflow:auto;max-height:360px;background:#05080d;border:1px solid var(--line);
+    border-radius:10px;padding:13px 15px;color:#bfe6d4;
+    box-shadow:0 0 0 1px rgba(56,245,192,.05) inset;
+  }
+  .cli-dim{color:var(--dim)}
+  .cli-err{color:var(--danger);white-space:pre-wrap}
+
   /* saved solution panel (shown once a mission is solved) */
   .solved-note{border:1px solid var(--neon-dim);border-radius:10px;background:rgba(56,245,192,.06);
     padding:11px 13px;display:flex;flex-direction:column;gap:7px}
@@ -286,7 +296,7 @@
     </div>
     <div class="topbtns">
       <button class="btn ghost" id="btnSchema">⌗ Schema</button>
-      <button class="btn ghost" id="btnConsole">&gt;_ SQL Console</button>
+      <button class="btn ghost" id="btnConsole">&gt;_ SQL Playground</button>
       <button class="btn ghost" id="btnReset">↺ Reset DB</button>
     </div>
   </header>
@@ -330,28 +340,6 @@
       <button class="btn ghost" data-close>✕</button>
     </div>
     <div class="sbd" id="schemaBody"></div>
-  </div>
-</div>
-
-<!-- console sheet -->
-<div class="sheet-bg" id="consoleSheet">
-  <div class="sheet">
-    <div class="shd">
-      <span style="font-family:var(--mono);color:var(--neon)">&gt;_</span>
-      <h3>Free SQL Console <span style="color:var(--muted);font-weight:400;font-family:var(--mono);font-size:.85rem">run anything against the live DB</span></h3>
-      <div class="spacer" style="flex:1"></div>
-      <button class="btn ghost" data-close>✕</button>
-    </div>
-    <div class="sbd">
-      <textarea id="consoleSql" spellcheck="false" style="min-height:96px">SELECT name FROM sqlite_master WHERE type='table';</textarea>
-      <div class="actions">
-        <button class="btn go" id="consoleRun">▶ Run query</button>
-        <span class="chip" data-consq="SELECT * FROM students;">all students</span>
-        <span class="chip" data-consq="SELECT * FROM users;">all users</span>
-        <span class="chip" data-consq="SELECT * FROM secrets;">secrets</span>
-      </div>
-      <div id="consoleResult"></div>
-    </div>
   </div>
 </div>
 
@@ -503,12 +491,16 @@ var MISSIONS = [
   }
 ];
 
+var PLAYGROUND_ID="playground";
+var PLAYGROUND_DEFAULT="SELECT * FROM users;";
+
 var state = {
   current:"login",
   solved:{},            // id -> true when captured
   flags:{},             // id -> captured flag value
   inputs:{},            // id -> {user,pass,search} last typed values
-  solutions:{}          // id -> {label,query} the exact query that solved it
+  solutions:{},         // id -> {label,query} the exact query that solved it
+  playgroundSql:PLAYGROUND_DEFAULT   // last text typed in the SQL Playground
 };
 
 /* --- persistence: survive both mission-switching and page reloads --- */
@@ -517,7 +509,7 @@ function saveState(){
   try{
     localStorage.setItem(STORE_KEY, JSON.stringify({
       current:state.current, solved:state.solved, flags:state.flags,
-      inputs:state.inputs, solutions:state.solutions
+      inputs:state.inputs, solutions:state.solutions, playgroundSql:state.playgroundSql
     }));
   }catch(e){/* storage may be blocked (private mode / file://) — degrade quietly */}
 }
@@ -532,6 +524,7 @@ function loadState(){
       state.flags=s.flags||{};
       state.inputs=s.inputs||{};
       state.solutions=s.solutions||{};
+      if(typeof s.playgroundSql==="string") state.playgroundSql=s.playgroundSql;
     }
   }catch(e){/* ignore corrupt/blocked storage */}
 }
@@ -580,6 +573,23 @@ function renderRail(){
     b.onclick=function(){ state.current=m.id; renderAll(); };
     railEl.appendChild(b);
   });
+
+  // --- sandbox section: free-form SQL practice ---
+  var div=document.createElement("div");
+  div.className="railhd";
+  div.style.marginTop="6px";
+  div.textContent="◈ Sandbox";
+  railEl.appendChild(div);
+
+  var pg=document.createElement("button");
+  pg.className="mission"+(state.current===PLAYGROUND_ID?" active":"");
+  pg.innerHTML=
+    '<span class="ix">&gt;_</span>'+
+    '<span><span class="mt">SQL Playground</span>'+
+    '<span class="md">practice · no goals</span></span>';
+  pg.onclick=function(){ state.current=PLAYGROUND_ID; saveState(); renderAll(); };
+  railEl.appendChild(pg);
+
   scoreUpdate();
 }
 
@@ -599,7 +609,99 @@ function solutionBlock(m){
     '</div>';
 }
 
+/* format a result set the way a real SQLite CLI prints it — plain aligned text,
+   NOT styled HTML table rows, so students read raw SQL output */
+function formatCli(cols, rows){
+  if(!cols||!cols.length) return "Statement executed. (no rows returned)";
+  function cell(v){ return v==null?"NULL":String(v); }
+  var widths=cols.map(function(c,i){
+    var w=String(c).length;
+    rows.forEach(function(r){ var l=cell(r[i]).length; if(l>w) w=l; });
+    return w;
+  });
+  function pad(s,w){ s=String(s); while(s.length<w) s+=" "; return s; }
+  var head=cols.map(function(c,i){return pad(c,widths[i]);}).join("  |  ");
+  var rule=widths.map(function(w){return new Array(w+1).join("-");}).join("--+--");
+  var body=rows.map(function(r){
+    return cols.map(function(c,i){return pad(cell(r[i]),widths[i]);}).join("  |  ");
+  }).join("\n");
+  return head+"\n"+rule+"\n"+(body||"(0 rows)")+"\n\n"+rows.length+" row"+(rows.length===1?"":"s")+" returned.";
+}
+
+var PLAY_EXAMPLES=[
+  {t:"all users",       q:"SELECT * FROM users;"},
+  {t:"all secrets",     q:"SELECT * FROM secrets;"},
+  {t:"all students",    q:"SELECT * FROM students;"},
+  {t:"one student",     q:"SELECT name, gpa FROM students WHERE name = 'Maya Chen';"},
+  {t:"filter (WHERE)",  q:"SELECT name, homeroom FROM students WHERE homeroom = '12-B';"},
+  {t:"the honest login",q:"SELECT username, role FROM users WHERE username = 'm.chen' AND password = 'hunter2';"},
+  {t:"list tables",     q:"SELECT name FROM sqlite_master WHERE type='table';"}
+];
+
+function renderPlayground(){
+  var sql=state.playgroundSql||PLAYGROUND_DEFAULT;
+  var chips=PLAY_EXAMPLES.map(function(e){
+    return '<span class="chip" data-pgq="'+esc(e.q)+'">'+esc(e.t)+'</span>';
+  }).join("");
+  stageEl.innerHTML=
+    '<section class="card">'+
+      '<div class="hd">'+
+        '<p class="eyebrow">SANDBOX · practice sql · no goals</p>'+
+        '<h2>SQL Playground</h2>'+
+        '<p>Run any SQL you like against the <b>same live database</b> the missions use. No injection needed here — '+
+          'just get comfortable with real queries like <code>SELECT * FROM users</code>. Then head back to the '+
+          'missions and watch how a single quote turns one of these honest queries into a break-in.</p>'+
+      '</div>'+
+      '<div class="bd">'+
+        '<div class="objective"><span class="k">Try</span><span>Start with an example below, then edit it — '+
+          'change the table, add a <code>WHERE</code>, pick specific columns. The result prints exactly as a SQLite shell would show it.</span></div>'+
+        '<div><label class="fld">SQL statement(s)</label>'+
+          '<textarea id="pg_sql" spellcheck="false" style="min-height:120px">'+esc(sql)+'</textarea></div>'+
+        '<div class="actions">'+
+          '<button class="btn go" id="pgRun">▶ Run SQL</button>'+
+          '<button class="btn ghost" id="pgClear">Clear</button>'+
+          '<div class="payloads">'+chips+'</div>'+
+        '</div>'+
+        '<div class="cli" id="pgOut"><span class="cli-dim">// results print here, sqlite-shell style…</span></div>'+
+        '<details class="hint"><summary>💡 Tables you can query</summary>'+
+          '<div class="hbody">'+
+            '<ul>'+
+            '<li><code>users</code> — id, username, password, role, flag</li>'+
+            '<li><code>students</code> — id, name, homeroom, gpa</li>'+
+            '<li><code>secrets</code> — id, label, value</li>'+
+            '</ul>'+
+            'Open the <b>⌗ Schema</b> panel any time for row counts. Nothing you do here affects your mission progress.'+
+          '</div></details>'+
+      '</div>'+
+    '</section>';
+
+  var ta=document.getElementById("pg_sql");
+  var out=document.getElementById("pgOut");
+
+  function save(){ state.playgroundSql=ta.value; saveState(); }
+  function run(){
+    save();
+    var r=query(ta.value);
+    if(r.error){
+      out.innerHTML='<span class="cli-err">Error: '+esc(r.error)+'</span>';
+    } else {
+      out.textContent=formatCli(r.cols, r.rows);
+    }
+  }
+  ta.addEventListener("input",save);
+  ta.addEventListener("keydown",function(e){
+    if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){ e.preventDefault(); run(); }
+  });
+  document.getElementById("pgRun").onclick=run;
+  document.getElementById("pgClear").onclick=function(){ ta.value=""; save(); ta.focus();
+    out.innerHTML='<span class="cli-dim">// cleared</span>'; };
+  Array.prototype.forEach.call(document.querySelectorAll(".chip[data-pgq]"),function(ch){
+    ch.onclick=function(){ ta.value=ch.getAttribute("data-pgq"); save(); run(); ta.focus(); };
+  });
+}
+
 function renderStage(){
+  if(state.current===PLAYGROUND_ID){ renderPlayground(); return; }
   var m=MISSIONS.filter(function(x){return x.id===state.current;})[0];
   var solved=!!state.solved[m.id];
   var sv=state.inputs[m.id]||{};
@@ -869,24 +971,6 @@ function renderSchema(){
   body.innerHTML=html;
 }
 
-function renderConsole(){
-  var sql=document.getElementById("consoleSql").value;
-  var r=query(sql);
-  var holder=document.getElementById("consoleResult");
-  var tmp={error:r.error,rows:r.rows,cols:r.cols};
-  // reuse renderer by temporarily creating a holder-like element
-  if(r.error){
-    holder.innerHTML='<div class="result"><div class="rhd"><span>RESPONSE</span><span>error</span></div><div class="sqlerr">✖ '+esc(r.error)+'</div></div>';
-    return;
-  }
-  var rows=r.rows||[],cols=r.cols||[];
-  var inner = rows.length ?
-    '<div class="tablewrap"><table><thead><tr>'+cols.map(function(c){return '<th>'+esc(c)+'</th>';}).join('')+
-    '</tr></thead><tbody>'+rows.map(function(row){return '<tr>'+row.map(function(v){return '<td>'+esc(v==null?'NULL':v)+'</td>';}).join('')+'</tr>';}).join('')+
-    '</tbody></table></div>' : '<div class="empty">0 rows.</div>';
-  holder.innerHTML='<div class="result"><div class="rhd"><span>RESPONSE</span><span>'+rows.length+' rows</span></div>'+inner+'</div>';
-}
-
 function openSheet(el){ el.classList.add("open"); }
 function closeSheets(){ document.querySelectorAll(".sheet-bg").forEach(function(s){s.classList.remove("open");}); }
 
@@ -896,7 +980,7 @@ function closeSheets(){ document.querySelectorAll(".sheet-bg").forEach(function(
 function renderAll(){ renderRail(); renderStage(); }
 
 document.getElementById("btnSchema").onclick=function(){ renderSchema(); openSheet(document.getElementById("schemaSheet")); };
-document.getElementById("btnConsole").onclick=function(){ openSheet(document.getElementById("consoleSheet")); };
+document.getElementById("btnConsole").onclick=function(){ state.current=PLAYGROUND_ID; saveState(); renderAll(); };
 document.getElementById("btnReset").onclick=function(){
   if(!confirm("Reset the database AND clear your saved progress, typed answers, and captured flags? This cannot be undone.")) return;
   buildDB();
@@ -904,10 +988,6 @@ document.getElementById("btnReset").onclick=function(){
   try{ localStorage.removeItem(STORE_KEY); }catch(e){}
   renderAll();
 };
-document.getElementById("consoleRun").onclick=renderConsole;
-document.querySelectorAll("[data-consq]").forEach(function(ch){
-  ch.onclick=function(){ document.getElementById("consoleSql").value=ch.getAttribute("data-consq"); renderConsole(); };
-});
 document.querySelectorAll("[data-close]").forEach(function(b){ b.onclick=closeSheets; });
 document.querySelectorAll(".sheet-bg").forEach(function(bg){
   bg.addEventListener("click",function(e){ if(e.target===bg) closeSheets(); });
