@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee profile · Meridian Freight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="../profile/">
+      <div class="brand-logo">M</div>
+      <div class="brand-name">Meridian Freight<small>Employee Portal</small></div>
+    </a>
+    <div class="topbar-user"></div>
+  </div>
+</header>
+
+<main class="page" id="page"></main>
+
+<script src="../assets/portal.js"></script>
+<script>
+(function(){
+  var session = getSession();
+  if(!session){ location.replace("../login/"); return; }
+  renderUserBar(session);
+
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];
+    });
+  }
+
+  // The record shown comes straight from the id in the URL — no check that the
+  // signed-in user is allowed to see it. Default to the user's own record.
+  var params = new URLSearchParams(location.search);
+  var id = parseInt(params.get("id"), 10);
+  if(isNaN(id)) id = session.id;
+
+  var page = document.getElementById("page");
+  var emp = EMPLOYEES[id];
+
+  if(!emp){
+    page.innerHTML =
+      '<div class="notfound"><b>No employee record</b>' +
+      'No record exists for this identifier.</div>';
+    return;
+  }
+
+  var initials = emp.name.replace(/\(.*\)/, "").trim()
+      .split(/\s+/).slice(0, 2).map(function(w){ return w[0]; }).join("");
+  var notes = emp.notes
+    ? '<div class="notes-field"><div class="nlabel">Internal notes</div>' + esc(emp.notes) + '</div>'
+    : "";
+
+  page.innerHTML =
+    '<div class="profile-card">' +
+      '<div class="profile-head">' +
+        '<div class="avatar ' + (emp.admin ? "admin" : "") + '">' + esc(initials) + '</div>' +
+        '<div><h2>' + esc(emp.name) + '</h2>' +
+          '<span class="role-tag ' + (emp.admin ? "admin" : "") + '">' + esc(emp.role) + '</span></div>' +
+      '</div>' +
+      '<dl class="kv">' +
+        '<dt>employee id</dt><dd>' + id + '</dd>' +
+        '<dt>email</dt><dd>' + esc(emp.email) + '</dd>' +
+        '<dt>department</dt><dd>' + esc(emp.dept) + '</dd>' +
+        '<dt>extension</dt><dd>' + esc(emp.ext) + '</dd>' +
+      '</dl>' +
+      notes +
+    '</div>';
+})();
+</script>
+</body>
+</html>

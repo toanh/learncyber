@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meridian Freight · Employee Portal</title>
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<script src="assets/portal.js"></script>
+<script>
+  // Portal root: send visitors to where their session belongs.
+  var s = getSession();
+  if(s && s.role === "admin")      location.replace("admin/");
+  else if(s)                       location.replace("profile/?id=" + s.id);
+  else                             location.replace("login/");
+</script>
+</body>
+</html>

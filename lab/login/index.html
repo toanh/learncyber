@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in · Meridian Freight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+</head>
+<body>
+
+<div class="auth">
+  <form class="auth-card" id="loginForm" autocomplete="off">
+    <div class="auth-brand">
+      <div class="brand-logo">M</div>
+      <div class="name">Meridian Freight<small>Employee Portal</small></div>
+    </div>
+    <h1>Sign in</h1>
+    <div class="sub">Sign in with your Meridian credentials.</div>
+
+    <div class="login-err" id="err" style="display:none"></div>
+
+    <div class="field">
+      <label for="u">Username</label>
+      <input id="u" name="username" autocomplete="off" placeholder="username">
+    </div>
+    <div class="field">
+      <label for="p">Password</label>
+      <input id="p" name="password" type="password" autocomplete="off" placeholder="password">
+    </div>
+    <button class="btn" type="submit">Sign in</button>
+
+    <div class="auth-note">New to Meridian? Contact IT for your temporary access
+      credentials while your account is provisioned.</div>
+  </form>
+</div>
+
+<script src="../assets/portal.js"></script>
+<script>
+(function(){
+  // Already signed in? Go where that session belongs.
+  var s = getSession();
+  if(s){ location.replace(s.role === "admin" ? "../admin/" : "../profile/?id=" + s.id); return; }
+
+  var form = document.getElementById("loginForm");
+  var err  = document.getElementById("err");
+
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    var u = (document.getElementById("u").value || "").trim().toLowerCase();
+    var p = (document.getElementById("p").value || "").trim();
+    var acct = ACCOUNTS[u];
+
+    if(acct && acct.pass === p){
+      setSession({user:u, role:acct.role, id:acct.id, display:acct.display});
+      location.href = acct.role === "admin" ? "../admin/" : "../profile/?id=" + acct.id;
+      return;
+    }
+    err.textContent = "Incorrect username or password.";
+    err.style.display = "block";
+    document.getElementById("u").focus();
+  });
+})();
+</script>
+</body>
+</html>

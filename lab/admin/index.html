@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administration · Meridian Freight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="../admin/">
+      <div class="brand-logo">M</div>
+      <div class="brand-name">Meridian Freight<small>Employee Portal</small></div>
+    </a>
+    <div class="topbar-user"></div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="admin-banner">You are signed in as <b>administrator</b>. Full control of the
+    Meridian portal — every account, every record, every setting.</div>
+  <div class="admin-grid">
+    <div class="admin-tile"><h4>User management</h4><p>Create, disable, or elevate any of 214 employee accounts.</p></div>
+    <div class="admin-tile"><h4>Directory export</h4><p>Download the full staff directory, including notes and comp data.</p></div>
+    <div class="admin-tile"><h4>Audit log</h4><p>Read — and clear — the access logs that would show this intrusion.</p></div>
+    <div class="admin-tile danger"><h4>Purge records</h4><p>Irreversibly delete accounts and operational data.</p></div>
+  </div>
+</main>
+
+<script src="../assets/portal.js"></script>
+<script>
+(function(){
+  var session = getSession();
+  // Admin area is gated to an administrator session.
+  if(!session){ location.replace("../login/"); return; }
+  if(session.role !== "admin"){ location.replace("../profile/?id=" + session.id); return; }
+  renderUserBar(session);
+})();
+</script>
+</body>
+</html>
