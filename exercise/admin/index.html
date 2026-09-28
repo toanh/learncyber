@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administration · Verdant Service Desk</title>
+<script>/* gate before any render: admins only */(function(){var s;try{s=JSON.parse(sessionStorage.getItem("vrg_session")||"null")}catch(e){s=null}if(!s)location.replace("../login/");else if(s.role!=="admin")location.replace("../tickets/")})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="../admin/">
+      <div class="brand-logo">V</div>
+      <div class="brand-name">Verdant Retail Group<small>IT Service Desk</small></div>
+    </a>
+    <nav class="topbar-nav"><a href="../admin/">Administration</a></nav>
+    <div class="topbar-user"></div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="admin-banner">You are signed in as <b>administrator</b>. Full control of the
+    Service Desk — every agent, every ticket queue, and all portal settings.</div>
+  <div class="admin-grid">
+    <div class="admin-tile"><h4>Agent management</h4><p>Create, disable, or promote any of the 38 support agent accounts.</p></div>
+    <div class="admin-tile"><h4>Ticket export</h4><p>Download every ticket across all queues, including internal notes and attachments.</p></div>
+    <div class="admin-tile"><h4>Audit log</h4><p>Read — and clear — the access log that records who opened which ticket.</p></div>
+    <div class="admin-tile danger"><h4>Purge queue</h4><p>Permanently delete tickets and customer records from the portal.</p></div>
+  </div>
+</main>
+
+<script src="../assets/portal.js"></script>
+<script>
+(function(){
+  var session = getSession();
+  if(!session){ location.replace("../login/"); return; }
+  if(session.role !== "admin"){ location.replace("../tickets/"); return; }
+  renderUserBar(session);
+})();
+</script>
+</body>
+</html>

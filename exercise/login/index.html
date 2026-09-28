@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign in · Meridian Freight</title>
-<script>/* gate before any render: bounce already-signed-in users */(function(){var s;try{s=JSON.parse(sessionStorage.getItem("mf_session")||"null")}catch(e){s=null}if(s)location.replace(s.role==="admin"?"../admin/":"../profile/?id="+s.id)})();</script>
+<title>Sign in · Verdant Service Desk</title>
+<script>/* gate before any render: bounce already-signed-in users */(function(){var s;try{s=JSON.parse(sessionStorage.getItem("vrg_session")||"null")}catch(e){s=null}if(s)location.replace(s.role==="admin"?"../admin/":"../tickets/")})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -15,11 +15,11 @@
 <div class="auth">
   <form class="auth-card" id="loginForm" autocomplete="off">
     <div class="auth-brand">
-      <div class="brand-logo">M</div>
-      <div class="name">Meridian Freight<small>Employee Portal</small></div>
+      <div class="brand-logo">V</div>
+      <div class="name">Verdant Retail Group<small>IT Service Desk</small></div>
     </div>
     <h1>Sign in</h1>
-    <div class="sub">Sign in with your Meridian credentials.</div>
+    <div class="sub">Agents and staff — sign in to view and manage tickets.</div>
 
     <div class="login-err" id="err" style="display:none"></div>
 
@@ -33,17 +33,16 @@
     </div>
     <button class="btn" type="submit">Sign in</button>
 
-    <div class="auth-note">New to Meridian? Contact IT for your temporary access
-      credentials while your account is provisioned.</div>
+    <div class="auth-note">New to the Service Desk?
+      <a href="../help/">Read the getting-started guide</a> for how to sign in.</div>
   </form>
 </div>
 
 <script src="../assets/portal.js"></script>
 <script>
 (function(){
-  // Already signed in? Go where that session belongs.
   var s = getSession();
-  if(s){ location.replace(s.role === "admin" ? "../admin/" : "../profile/?id=" + s.id); return; }
+  if(s){ location.replace(s.role === "admin" ? "../admin/" : "../tickets/"); return; }
 
   var form = document.getElementById("loginForm");
   var err  = document.getElementById("err");
@@ -55,8 +54,8 @@
     var acct = ACCOUNTS[u];
 
     if(acct && acct.pass === p){
-      setSession({user:u, role:acct.role, id:acct.id, display:acct.display});
-      location.href = acct.role === "admin" ? "../admin/" : "../profile/?id=" + acct.id;
+      setSession({user:u, role:acct.role, id:acct.user, display:acct.display});
+      location.href = acct.role === "admin" ? "../admin/" : "../tickets/";
       return;
     }
     err.textContent = "Incorrect username or password.";

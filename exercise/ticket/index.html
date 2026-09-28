@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticket · Verdant Service Desk</title>
+<script>/* gate before any render: signed-in agents only */(function(){var s;try{s=JSON.parse(sessionStorage.getItem("vrg_session")||"null")}catch(e){s=null}if(!s)location.replace("../login/")})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="../tickets/">
+      <div class="brand-logo">V</div>
+      <div class="brand-name">Verdant Retail Group<small>IT Service Desk</small></div>
+    </a>
+    <nav class="topbar-nav"><a href="../tickets/">My tickets</a></nav>
+    <div class="topbar-user"></div>
+  </div>
+</header>
+
+<main class="page" id="page">
+  <div class="crumb"><a href="../tickets/">My tickets</a> / <span id="crumbRef"></span></div>
+  <div id="content"></div>
+</main>
+
+<script src="../assets/portal.js"></script>
+<script>
+(function(){
+  var session = getSession();
+  if(!session){ location.replace("../login/"); return; }
+  renderUserBar(session);
+
+  // The ticket shown comes straight from the ref in the URL. The signed-in
+  // agent is never checked against the ticket's assignee.
+  var params = new URLSearchParams(location.search);
+  var ref = (params.get("ref") || "").trim();
+  document.getElementById("crumbRef").textContent = ref ? "#" + ref : "—";
+
+  var content = document.getElementById("content");
+  var t = TICKETS[ref];
+
+  if(!t){
+    content.innerHTML =
+      '<div class="notfound"><b>Ticket not found</b>' +
+      'No ticket matches that reference.</div>';
+    return;
+  }
+
+  var badges = '<span class="badge ' + t.status + '">' + t.status + '</span>' +
+    (t.priority === "high" ? '<span class="badge high">high priority</span>' : '') +
+    (t.internal ? '<span class="badge internal">internal</span>' : '');
+
+  var note = t.note
+    ? '<div class="ticket-note"><div class="nlabel">Internal note — agents only</div>' +
+      escapeHtml(t.note) + '</div>'
+    : "";
+
+  content.innerHTML =
+    '<div class="ticket-card">' +
+      '<div class="ticket-top">' +
+        '<h2>' + escapeHtml(t.subject) + '</h2>' +
+        '<span class="ticket-ref">#' + escapeHtml(ref) + '</span>' +
+      '</div>' +
+      '<div class="badges">' + badges + '</div>' +
+      '<dl class="ticket-meta">' +
+        '<dt>requester</dt><dd>' + escapeHtml(t.requester) + '</dd>' +
+        '<dt>assigned to</dt><dd>' + escapeHtml(t.assignee) + '</dd>' +
+        '<dt>opened</dt><dd>' + escapeHtml(t.opened) + '</dd>' +
+        '<dt>priority</dt><dd>' + escapeHtml(t.priority) + '</dd>' +
+      '</dl>' +
+      '<div class="ticket-body">' + escapeHtml(t.body) + '</div>' +
+      note +
+    '</div>';
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My tickets · Verdant Service Desk</title>
+<script>/* gate before any render: signed-in agents only */(function(){var s;try{s=JSON.parse(sessionStorage.getItem("vrg_session")||"null")}catch(e){s=null}if(!s)location.replace("../login/")})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="../tickets/">
+      <div class="brand-logo">V</div>
+      <div class="brand-name">Verdant Retail Group<small>IT Service Desk</small></div>
+    </a>
+    <nav class="topbar-nav"><a href="../tickets/">My tickets</a></nav>
+    <div class="topbar-user"></div>
+  </div>
+</header>
+
+<main class="page">
+  <h1 class="page-title">My tickets</h1>
+  <div class="page-sub">Tickets currently assigned to you.</div>
+  <div id="list"></div>
+</main>
+
+<script src="../assets/portal.js"></script>
+<script>
+(function(){
+  var session = getSession();
+  if(!session){ location.replace("../login/"); return; }
+  renderUserBar(session);
+
+  // The list is scoped to the signed-in agent's own tickets.
+  var mine = Object.keys(TICKETS)
+    .filter(function(ref){ return TICKETS[ref].assignee === session.user; })
+    .sort(function(a,b){ return b - a; });
+
+  var el = document.getElementById("list");
+  if(!mine.length){
+    el.innerHTML = '<p class="empty-note">You have no tickets assigned right now.</p>';
+    return;
+  }
+
+  var rows = mine.map(function(ref){
+    var t = TICKETS[ref];
+    return '<tr>' +
+      '<td class="ref">#' + ref + '</td>' +
+      '<td><a href="../ticket/?ref=' + ref + '">' + escapeHtml(t.subject) + '</a></td>' +
+      '<td>' + escapeHtml(t.requester) + '</td>' +
+      '<td><span class="badge ' + t.status + '">' + t.status + '</span></td>' +
+      '<td>' + escapeHtml(t.opened) + '</td>' +
+    '</tr>';
+  }).join("");
+
+  el.innerHTML =
+    '<table class="tickets-table"><thead><tr>' +
+      '<th>Ref</th><th>Subject</th><th>Requester</th><th>Status</th><th>Opened</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
+})();
+</script>
+</body>
+</html>

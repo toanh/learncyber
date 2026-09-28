@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Verdant Retail Group · IT Service Desk</title>
+<script>
+  /* Service Desk root: route to where the session belongs, before any render. */
+  (function(){
+    var s;
+    try{ s = JSON.parse(sessionStorage.getItem("vrg_session") || "null"); }catch(e){ s = null; }
+    location.replace(s && s.role === "admin" ? "admin/" : s ? "tickets/" : "login/");
+  })();
+</script>
+</head>
+<body></body>
+</html>

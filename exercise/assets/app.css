@@ -1,0 +1,202 @@
+/* ==========================================================================
+   Verdant Retail Group — IT Service Desk
+   Shared styling for the sign-in, help, ticket and admin pages.
+   ========================================================================== */
+:root{
+  --paper:#eef2f1;
+  --surface:#ffffff;
+  --ink:#243230;
+  --muted:#63736f;
+  --brand:#0f7a6b;
+  --brand-dark:#0b5f54;
+  --line:#d3ddda;
+  --alert:#c2603f;
+  --amber:#b7791f;
+  --info:#2f6bb0;
+
+  --sans:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+
+a{color:var(--brand);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---- top navigation bar ---- */
+.topbar{
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+  box-shadow:0 1px 3px rgba(36,50,48,.04);
+}
+.topbar-inner{
+  max-width:960px;margin:0 auto;padding:12px 24px;
+  display:flex;align-items:center;gap:14px;
+}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-logo{
+  width:34px;height:34px;border-radius:7px;background:var(--brand);
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px;
+}
+.brand-name{font-weight:700;font-size:16px;color:var(--ink);line-height:1.2}
+.brand-name small{display:block;font-weight:400;font-size:11.5px;color:var(--muted)}
+.topbar-nav{display:flex;gap:16px;margin-left:8px;font-size:13px}
+.topbar-nav a{color:var(--muted)}
+.topbar-nav a:hover{color:var(--ink)}
+.topbar-user{margin-left:auto;font-size:12.5px;color:var(--muted);text-align:right}
+.topbar-user b{color:var(--ink)}
+.topbar-user .signout{display:inline-block;margin-top:2px;font-size:12px}
+
+/* ---- page container ---- */
+.page{
+  flex:1;width:100%;max-width:960px;
+  margin:0 auto;padding:34px 24px 48px;
+}
+.page-title{font-size:20px;margin-bottom:6px}
+.page-sub{font-size:13.5px;color:var(--muted);margin-bottom:24px;max-width:640px}
+.crumb{font-size:12.5px;color:var(--muted);margin-bottom:16px;font-family:var(--mono)}
+.crumb a{color:var(--muted)}
+
+/* ---- sign in ---- */
+.auth{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+.auth-card{
+  width:100%;max-width:360px;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;
+  padding:32px 30px;box-shadow:0 18px 40px -28px rgba(36,50,48,.4);
+}
+.auth-brand{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px}
+.auth-brand .brand-logo{width:44px;height:44px;font-size:22px;border-radius:9px}
+.auth-brand .name{font-weight:700;font-size:17px}
+.auth-brand .name small{display:block;text-align:center;font-weight:400;font-size:12px;color:var(--muted)}
+.auth h1{font-size:18px;text-align:center;margin-bottom:4px}
+.auth .sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:22px}
+.field{text-align:left;margin-bottom:14px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.field input{
+  width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;
+  font-family:var(--mono);font-size:13px;color:var(--ink);background:var(--surface);
+}
+.field input:focus{outline:2px solid var(--brand);outline-offset:-1px;border-color:var(--brand)}
+.btn{
+  width:100%;padding:11px;background:var(--brand);color:#fff;border:none;
+  border-radius:6px;font-family:var(--sans);font-size:14px;font-weight:600;
+  cursor:pointer;transition:background .15s;margin-top:4px;
+}
+.btn:hover{background:var(--brand-dark)}
+.auth-note{margin-top:18px;font-size:11.5px;color:var(--muted);line-height:1.5;text-align:center}
+.auth-note a{font-size:11.5px}
+.login-err{
+  background:#fdecea;border:1px solid #f5c6c0;color:#b23a2e;
+  font-size:12.5px;padding:9px 12px;border-radius:6px;margin-bottom:16px;text-align:left;
+}
+
+/* ---- help / KB article ---- */
+.article{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:9px;padding:30px 34px;max-width:720px;
+}
+.article h1{font-size:22px;margin-bottom:6px}
+.article .meta{font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:22px}
+.article h2{font-size:15px;margin:22px 0 8px;color:var(--ink)}
+.article p{font-size:13.5px;color:#3c4a47;margin-bottom:12px}
+.article ol,.article ul{margin:0 0 12px 22px;font-size:13.5px;color:#3c4a47}
+.article li{margin-bottom:6px}
+.article code{
+  font-family:var(--mono);font-size:12.5px;background:#eef2f1;
+  padding:1px 6px;border-radius:3px;color:var(--brand-dark);
+}
+.callout{
+  background:#f2f8f6;border:1px solid #cfe6df;border-left:3px solid var(--brand);
+  border-radius:0 7px 7px 0;padding:13px 16px;font-size:12.5px;color:#3c4a47;margin:0 0 12px;
+}
+.callout .clabel{font-family:var(--mono);font-size:11px;color:var(--brand-dark);margin-bottom:5px;
+  text-transform:uppercase;letter-spacing:.04em}
+
+/* ---- tickets list ---- */
+.tickets-table{
+  width:100%;border-collapse:collapse;background:var(--surface);
+  border:1px solid var(--line);border-radius:9px;overflow:hidden;font-size:13px;
+}
+.tickets-table th{
+  text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--muted);font-weight:500;
+  padding:11px 14px;border-bottom:1px solid var(--line);background:#f6f9f8;
+}
+.tickets-table td{padding:12px 14px;border-bottom:1px solid var(--line);color:var(--ink)}
+.tickets-table tr:last-child td{border-bottom:none}
+.tickets-table tr:hover td{background:#f6f9f8}
+.tickets-table .ref{font-family:var(--mono);color:var(--muted)}
+.tickets-table a{font-weight:500}
+.empty-note{font-size:13px;color:var(--muted);margin-top:14px}
+
+/* ---- single ticket ---- */
+.ticket-card{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:9px;padding:26px;max-width:680px;
+}
+.ticket-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:6px}
+.ticket-top h2{font-size:18px;color:var(--ink);flex:1}
+.ticket-ref{font-family:var(--mono);font-size:12.5px;color:var(--muted);white-space:nowrap;margin-top:3px}
+.badges{display:flex;gap:8px;margin:10px 0 20px}
+.badge{
+  display:inline-block;font-size:11px;font-family:var(--mono);
+  padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em;
+}
+.badge.open{background:#e3eef8;color:var(--info)}
+.badge.pending{background:#faf0da;color:var(--amber)}
+.badge.closed{background:#e8ecec;color:var(--muted)}
+.badge.high{background:#f8e3da;color:var(--alert)}
+.badge.normal{background:#eef2f1;color:#4a5a56}
+.badge.internal{background:#efe6f5;color:#6b4a8f}
+.ticket-meta{display:grid;grid-template-columns:120px 1fr;gap:10px 14px;font-size:13px;
+  padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:18px}
+.ticket-meta dt{color:var(--muted);font-family:var(--mono);font-size:12px}
+.ticket-meta dd{color:var(--ink);word-break:break-word}
+.ticket-body{font-size:13.5px;color:#3c4a47;line-height:1.65;white-space:pre-wrap}
+.ticket-note{
+  margin-top:18px;padding:14px 16px;background:#f4eef8;
+  border:1px solid #e0d1ec;border-radius:7px;font-size:12.5px;color:#57456b;white-space:pre-wrap;
+}
+.ticket-note .nlabel{font-family:var(--mono);font-size:11px;color:#7a5aa0;margin-bottom:6px;
+  text-transform:uppercase;letter-spacing:.04em}
+.notfound{
+  max-width:680px;padding:40px 34px;text-align:center;color:var(--muted);
+  background:var(--surface);border:1px dashed var(--line);border-radius:9px;
+}
+.notfound b{color:var(--ink);display:block;margin-bottom:6px;font-size:16px}
+
+/* ---- admin console ---- */
+.admin-banner{
+  background:var(--alert);color:#fff;padding:15px 18px;border-radius:8px;
+  margin-bottom:22px;font-size:13.5px;max-width:760px;
+}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:760px}
+.admin-tile{
+  background:var(--surface);border:1px solid var(--line);border-radius:8px;
+  padding:18px;font-size:13px;
+}
+.admin-tile h4{font-size:13.5px;color:var(--ink);margin-bottom:6px}
+.admin-tile p{color:var(--muted);font-size:12px}
+.admin-tile.danger{border-color:#f0c4b8}
+.admin-tile.danger h4{color:var(--alert)}
+
+@media(max-width:640px){
+  .admin-grid{grid-template-columns:1fr}
+  .page{padding:24px 18px 36px}
+  .topbar-inner{padding:12px 18px;flex-wrap:wrap}
+  .article{padding:24px 22px}
+  .tickets-table{font-size:12px}
+}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}

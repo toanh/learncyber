@@ -2,18 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Meridian Freight · Employee Portal</title>
-<link rel="stylesheet" href="assets/app.css">
-</head>
-<body>
-<script src="assets/portal.js"></script>
 <script>
-  // Portal root: send visitors to where their session belongs.
-  var s = getSession();
-  if(s && s.role === "admin")      location.replace("admin/");
-  else if(s)                       location.replace("profile/?id=" + s.id);
-  else                             location.replace("login/");
+  /* Portal root: route to where the session belongs, before any render. */
+  (function(){
+    var s;
+    try{ s = JSON.parse(sessionStorage.getItem("mf_session") || "null"); }catch(e){ s = null; }
+    location.replace(s && s.role === "admin" ? "admin/" : s ? "profile/?id=" + s.id : "login/");
+  })();
 </script>
-</body>
+</head>
+<body></body>
 </html>
