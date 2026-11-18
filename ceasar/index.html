@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Caesar Cipher Wheel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f5f7;
+    --card:#ffffff;
+    --ink:#1a1d21;
+    --muted:#6b7280;
+    --border:#e2e5e9;
+    --accent:#2563eb;
+    --accent-ink:#ffffff;
+    --outer-a:#ffffff;
+    --outer-b:#eef1f5;
+    --outer-ink:#1a1d21;
+    --inner-a:#2563eb;
+    --inner-b:#1d4ed8;
+    --inner-ink:#ffffff;
+    --hub:#0f172a;
+    --hub-ink:#ffffff;
+    --hi:#f59e0b;
+    --hi-ink:#1a1d21;
+    --pointer:#dc2626;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d1117; --card:#161b22; --ink:#e6edf3; --muted:#8b949e; --border:#30363d;
+      --accent:#3b82f6; --outer-a:#1f2630; --outer-b:#19202a; --outer-ink:#e6edf3;
+      --inner-a:#1d4ed8; --inner-b:#1e40af; --hub:#000000; --hi:#fbbf24;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1117; --card:#161b22; --ink:#e6edf3; --muted:#8b949e; --border:#30363d;
+    --accent:#3b82f6; --outer-a:#1f2630; --outer-b:#19202a; --outer-ink:#e6edf3;
+    --inner-a:#1d4ed8; --inner-b:#1e40af; --hub:#000000; --hi:#fbbf24;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Inter",system-ui,-apple-system,sans-serif;
+    min-height:100vh;
+    padding:max(16px, env(safe-area-inset-top)) 16px 24px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  header{max-width:1200px;margin:0 auto 12px;text-align:center}
+  h1{font-size:clamp(1.5rem,4vw,2.4rem);margin:.2em 0 .1em;letter-spacing:-.02em}
+  header p{margin:0;color:var(--muted);font-size:clamp(.95rem,2.2vw,1.1rem)}
+
+  main{
+    max-width:1200px;margin:0 auto;
+    display:grid;gap:20px;
+    grid-template-columns:1fr;
+    align-items:start;
+  }
+  @media (min-width:900px){
+    main{grid-template-columns:minmax(0,1.15fr) minmax(320px,1fr)}
+  }
+
+  .wheel-wrap{
+    position:relative;
+    width:100%;
+    max-width:min(100%, 78vh);
+    margin:0 auto;
+    aspect-ratio:1/1;
+  }
+  svg#wheel{
+    width:100%;height:100%;display:block;
+    touch-action:none;user-select:none;-webkit-user-select:none;
+    cursor:grab;
+  }
+  svg#wheel.dragging{cursor:grabbing}
+  .seg{stroke:var(--border);stroke-width:2}
+  .outer .seg.a{fill:var(--outer-a)} .outer .seg.b{fill:var(--outer-b)}
+  .inner .seg.a{fill:var(--inner-a)} .inner .seg.b{fill:var(--inner-b)}
+  .outer text{fill:var(--outer-ink)}
+  .inner text{fill:var(--inner-ink)}
+  .letter{font-family:"Inter",sans-serif;font-weight:800;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+  .num{font-family:"JetBrains Mono",monospace;font-weight:500;font-size:20px;text-anchor:middle;dominant-baseline:central;pointer-events:none;opacity:.55}
+  .cell.hi .seg{fill:var(--hi)!important}
+  .cell.hi text{fill:var(--hi-ink)!important}
+  .hub{fill:var(--hub)}
+  .hub-label{fill:var(--hub-ink);font-family:"Inter",sans-serif;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+  .pointer{fill:var(--pointer)}
+
+  .panel{
+    background:var(--card);border:1px solid var(--border);border-radius:16px;
+    padding:20px;display:flex;flex-direction:column;gap:18px;
+    box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.06);
+  }
+  .shift-row{display:flex;align-items:center;justify-content:center;gap:12px}
+  .shift-display{text-align:center;min-width:140px}
+  .shift-display .label{font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+  .shift-display .val{font-size:3rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+  button{
+    font:inherit;font-weight:700;border:1px solid var(--border);
+    background:var(--card);color:var(--ink);border-radius:12px;
+    min-height:56px;min-width:56px;padding:0 16px;font-size:1.2rem;cursor:pointer;
+    touch-action:manipulation;
+  }
+  button:active{transform:scale(.96)}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .round{border-radius:50%;width:64px;height:64px;font-size:1.6rem;padding:0}
+
+  .seg-toggle{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .seg-toggle button{border:0;border-radius:0;font-size:1.1rem}
+  .seg-toggle button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+  label.field{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.95rem}
+  textarea, .out{
+    font-family:"JetBrains Mono",monospace;font-size:1.35rem;letter-spacing:.06em;
+    width:100%;border:1px solid var(--border);border-radius:12px;padding:12px 14px;
+    background:var(--bg);color:var(--ink);min-height:90px;resize:vertical;
+    text-transform:uppercase;word-break:break-word;
+  }
+  .out{min-height:90px;white-space:pre-wrap;font-weight:700}
+  .out-row{display:flex;gap:10px}
+  .out-row button{font-size:1rem;flex:1}
+
+  .pair{
+    text-align:center;font-size:1.25rem;min-height:1.6em;color:var(--muted)
+  }
+  .pair b{color:var(--ink);font-family:"JetBrains Mono",monospace;font-size:1.6rem}
+
+  .legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:.92rem;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:16px;height:16px;border-radius:4px;border:1px solid var(--border);display:inline-block}
+
+  details{color:var(--muted);font-size:.95rem;line-height:1.5}
+  summary{cursor:pointer;font-weight:600;color:var(--ink)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Caesar Cipher Wheel</h1>
+  <p>Drag either ring to spin it. Tap a letter to see what it pairs with.</p>
+</header>
+
+<main>
+  <div class="wheel-wrap">
+    <svg id="wheel" viewBox="-500 -520 1000 1020" aria-label="Caesar cipher wheel">
+      <g id="outer" class="outer"></g>
+      <g id="inner" class="inner"></g>
+      <circle class="hub" r="238"></circle>
+      <text class="hub-label" y="-80" font-size="34" font-weight="600" opacity=".7">SHIFT</text>
+      <text id="hubShift" class="hub-label" y="0" font-size="120" font-weight="800">+3</text>
+      <text id="hubPair" class="hub-label" y="100" font-size="44" font-weight="700" font-family="JetBrains Mono, monospace">A → D</text>
+      <path class="pointer" d="M -24 -519 L 24 -519 L 0 -495 Z"></path>
+    </svg>
+  </div>
+
+  <section class="panel">
+    <div class="legend">
+      <span><i class="sw" style="background:var(--outer-a)"></i>Outer = plaintext</span>
+      <span><i class="sw" style="background:var(--inner-a)"></i>Inner = ciphertext</span>
+    </div>
+
+    <div class="shift-row">
+      <button class="round" id="minus" aria-label="Rotate inner wheel back">−</button>
+      <div class="shift-display">
+        <div class="label">Key (shift)</div>
+        <div class="val" id="shiftVal">3</div>
+      </div>
+      <button class="round" id="plus" aria-label="Rotate inner wheel forward">+</button>
+    </div>
+
+    <div class="pair" id="pairText">Tap a letter on the wheel</div>
+
+    <div class="seg-toggle" role="group" aria-label="Mode">
+      <button id="modeEnc" aria-pressed="true">Encrypt</button>
+      <button id="modeDec" aria-pressed="false">Decrypt</button>
+    </div>
+
+    <label class="field">
+      <span id="inLabel">Plaintext</span>
+      <textarea id="input" rows="3" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type a message…"></textarea>
+    </label>
+
+    <div class="field" style="display:flex;flex-direction:column;gap:6px;font-weight:600">
+      <span id="outLabel">Ciphertext</span>
+      <div class="out" id="output" aria-live="polite"></div>
+    </div>
+
+    <div class="out-row">
+      <button id="swap">⇅ Use output as input</button>
+      <button id="reset">Reset</button>
+    </div>
+
+    <details>
+      <summary>How it works</summary>
+      <p>Each letter on the outer ring (plaintext) lines up with a letter on the inner ring (ciphertext).
+      The <b>shift</b> is how many places the inner ring has moved. To <b>encrypt</b>, find your letter on the outer ring
+      and read the inner letter next to it. To <b>decrypt</b>, find the letter on the inner ring and read the outer letter.</p>
+    </details>
+  </section>
+</main>
+
+<script>
+(() => {
+  const N = 26, STEP = 360 / N;
+  const ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("wheel");
+  const gOuter = document.getElementById("outer");
+  const gInner = document.getElementById("inner");
+
+  const rings = {
+    outer: { g: gOuter, r1: 368, r2: 492, tr: 440, nr: 384, fs: 66, rot: 0, cells: [] },
+    inner: { g: gInner, r1: 242, r2: 366, tr: 312, nr: 0,   fs: 60, rot: -3 * STEP, cells: [] },
+  };
+
+  const pt = (r, deg) => {
+    const a = deg * Math.PI / 180;
+    return [r * Math.sin(a), -r * Math.cos(a)];
+  };
+  const sector = (r1, r2) => {
+    const h = STEP / 2;
+    const [ax, ay] = pt(r2, -h), [bx, by] = pt(r2, h), [cx, cy] = pt(r1, h), [dx, dy] = pt(r1, -h);
+    return `M${ax} ${ay}A${r2} ${r2} 0 0 1 ${bx} ${by}L${cx} ${cy}A${r1} ${r1} 0 0 0 ${dx} ${dy}Z`;
+  };
+
+  for (const [name, ring] of Object.entries(rings)) {
+    const d = sector(ring.r1, ring.r2);
+    for (let i = 0; i < N; i++) {
+      const cell = document.createElementNS(NS, "g");
+      cell.setAttribute("class", "cell");
+      cell.setAttribute("transform", `rotate(${i * STEP})`);
+      cell.dataset.ring = name;
+      cell.dataset.idx = i;
+      const p = document.createElementNS(NS, "path");
+      p.setAttribute("d", d);
+      p.setAttribute("class", "seg " + (i % 2 ? "b" : "a"));
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("class", "letter");
+      t.setAttribute("y", -ring.tr);
+      t.setAttribute("font-size", ring.fs);
+      t.textContent = ABC[i];
+      cell.append(p, t);
+      if (ring.nr) {
+        const n = document.createElementNS(NS, "text");
+        n.setAttribute("class", "num");
+        n.setAttribute("y", -ring.nr);
+        n.textContent = i;
+        cell.append(n);
+      }
+      ring.g.append(cell);
+      ring.cells.push(cell);
+    }
+  }
+
+  const mod = (a, n) => ((a % n) + n) % n;
+  const getShift = () => mod(Math.round((rings.outer.rot - rings.inner.rot) / STEP), N);
+
+  // ---- state ----
+  let mode = "enc";
+  let selection = null; // {ring:'outer'|'inner', idx}
+
+  const $ = id => document.getElementById(id);
+  const input = $("input"), output = $("output");
+
+  function applyRot() {
+    for (const ring of Object.values(rings)) ring.g.setAttribute("transform", `rotate(${ring.rot})`);
+  }
+
+  function render() {
+    applyRot();
+    const s = getShift();
+    $("shiftVal").textContent = s;
+    $("hubShift").textContent = "+" + s;
+    $("hubPair").textContent = `A → ${ABC[s]}`;
+
+    // highlight
+    for (const r of Object.values(rings)) r.cells.forEach(c => c.classList.remove("hi"));
+    if (selection) {
+      let p, c;
+      if (selection.ring === "outer") { p = selection.idx; c = mod(p + s, N); }
+      else { c = selection.idx; p = mod(c - s, N); }
+      rings.outer.cells[p].classList.add("hi");
+      rings.inner.cells[c].classList.add("hi");
+      $("pairText").innerHTML = mode === "enc" || selection.ring === "outer"
+        ? `Plain <b>${ABC[p]}</b> → Cipher <b>${ABC[c]}</b>`
+        : `Cipher <b>${ABC[c]}</b> → Plain <b>${ABC[p]}</b>`;
+    } else {
+      $("pairText").textContent = "Tap a letter on the wheel";
+    }
+
+    // message
+    const k = mode === "enc" ? s : N - s;
+    output.textContent = [...input.value.toUpperCase()].map(ch => {
+      const i = ABC.indexOf(ch);
+      return i < 0 ? ch : ABC[(i + k) % N];
+    }).join("");
+  }
+
+  // ---- animation / snapping ----
+  let anim = null;
+  function animateTo(targets, dur = 220) {
+    cancelAnimationFrame(anim);
+    const start = performance.now();
+    const from = { outer: rings.outer.rot, inner: rings.inner.rot };
+    const tick = now => {
+      const t = Math.min(1, (now - start) / dur);
+      const e = 1 - Math.pow(1 - t, 3);
+      for (const k in targets) rings[k].rot = from[k] + (targets[k] - from[k]) * e;
+      render();
+      if (t < 1) anim = requestAnimationFrame(tick);
+    };
+    anim = requestAnimationFrame(tick);
+  }
+  const snap = v => Math.round(v / STEP) * STEP;
+
+  function stepInner(delta) {
+    // + makes the shift bigger: inner ring rotates counter-clockwise
+    const target = snap(rings.inner.rot) - delta * STEP;
+    animateTo({ inner: target });
+  }
+
+  // ---- dragging ----
+  function svgPoint(e) {
+    const p = svg.createSVGPoint();
+    p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  const angleOf = p => Math.atan2(p.x, -p.y) * 180 / Math.PI;
+
+  let drag = null;
+  svg.addEventListener("pointerdown", e => {
+    const p = svgPoint(e);
+    const r = Math.hypot(p.x, p.y);
+    if (r > 500) return;
+    const which = r >= rings.outer.r1 ? "outer" : "inner"; // hub drags the inner ring
+    cancelAnimationFrame(anim);
+    drag = {
+      id: e.pointerId, ring: which, startRot: rings[which].rot,
+      lastAngle: angleOf(p), total: 0, moved: 0, sx: e.clientX, sy: e.clientY,
+      target: e.target.closest(".cell"),
+    };
+    svg.setPointerCapture(e.pointerId);
+    svg.classList.add("dragging");
+    e.preventDefault();
+  });
+  svg.addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const a = angleOf(svgPoint(e));
+    let d = a - drag.lastAngle;
+    if (d > 180) d -= 360; else if (d < -180) d += 360;
+    drag.lastAngle = a;
+    drag.total += d;
+    drag.moved = Math.max(drag.moved, Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy));
+    if (drag.moved > 6) {
+      rings[drag.ring].rot = drag.startRot + drag.total;
+      render();
+    }
+  });
+  function endDrag(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    svg.classList.remove("dragging");
+    if (drag.moved <= 6) {
+      if (drag.target) {
+        const ring = drag.target.dataset.ring, idx = +drag.target.dataset.idx;
+        selection = (selection && selection.ring === ring && selection.idx === idx) ? null : { ring, idx };
+        render();
+      }
+    } else {
+      animateTo({ [drag.ring]: snap(rings[drag.ring].rot) });
+    }
+    drag = null;
+  }
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+
+  // ---- controls ----
+  $("plus").onclick = () => stepInner(1);
+  $("minus").onclick = () => stepInner(-1);
+
+  function setMode(m) {
+    mode = m;
+    $("modeEnc").setAttribute("aria-pressed", m === "enc");
+    $("modeDec").setAttribute("aria-pressed", m === "dec");
+    $("inLabel").textContent = m === "enc" ? "Plaintext" : "Ciphertext";
+    $("outLabel").textContent = m === "enc" ? "Ciphertext" : "Plaintext";
+    selectLastTyped();
+    render();
+  }
+  $("modeEnc").onclick = () => setMode("enc");
+  $("modeDec").onclick = () => setMode("dec");
+
+  function selectLastTyped() {
+    const letters = input.value.toUpperCase().replace(/[^A-Z]/g, "");
+    if (!letters) return;
+    selection = { ring: mode === "enc" ? "outer" : "inner", idx: ABC.indexOf(letters.at(-1)) };
+  }
+  input.addEventListener("input", () => { selectLastTyped(); render(); });
+
+  $("swap").onclick = () => {
+    input.value = output.textContent;
+    setMode(mode === "enc" ? "dec" : "enc");
+  };
+  $("reset").onclick = () => {
+    input.value = "";
+    selection = null;
+    animateTo({ outer: 0, inner: -3 * STEP });
+  };
+
+  document.addEventListener("keydown", e => {
+    if (e.target === input) return;
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") { stepInner(1); e.preventDefault(); }
+    if (e.key === "ArrowLeft" || e.key === "ArrowDown") { stepInner(-1); e.preventDefault(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
