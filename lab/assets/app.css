@@ -1,0 +1,155 @@
+/* ==========================================================================
+   Meridian Freight — Employee Portal
+   Shared corporate styling for the login, profile and admin pages.
+   ========================================================================== */
+:root{
+  --paper:#eef1f5;
+  --surface:#ffffff;
+  --ink:#2c3542;
+  --muted:#6b7684;
+  --corp:#2f6bb0;
+  --corp-dark:#245a95;
+  --line:#d5dbe3;
+  --alert:#d0674a;
+
+  --sans:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+
+a{color:var(--corp);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---- top navigation bar ---- */
+.topbar{
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+  box-shadow:0 1px 3px rgba(44,53,66,.04);
+}
+.topbar-inner{
+  max-width:960px;margin:0 auto;padding:12px 24px;
+  display:flex;align-items:center;gap:12px;
+}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-logo{
+  width:34px;height:34px;border-radius:7px;background:var(--corp);
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px;
+}
+.brand-name{font-weight:700;font-size:16px;color:var(--ink);line-height:1.2}
+.brand-name small{display:block;font-weight:400;font-size:11.5px;color:var(--muted)}
+.topbar-user{margin-left:auto;font-size:12.5px;color:var(--muted);text-align:right}
+.topbar-user b{color:var(--ink)}
+.topbar-user .signout{display:inline-block;margin-top:2px;font-size:12px}
+
+/* ---- page container ---- */
+.page{
+  flex:1;width:100%;max-width:960px;
+  margin:0 auto;padding:34px 24px 48px;
+}
+
+/* ---- login ---- */
+.auth{
+  flex:1;display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.auth-card{
+  width:100%;max-width:360px;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;
+  padding:32px 30px;box-shadow:0 18px 40px -28px rgba(44,53,66,.4);
+}
+.auth-brand{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px}
+.auth-brand .brand-logo{width:44px;height:44px;font-size:22px;border-radius:9px}
+.auth-brand .name{font-weight:700;font-size:17px}
+.auth-brand .name small{display:block;text-align:center;font-weight:400;font-size:12px;color:var(--muted)}
+.auth h1{font-size:18px;text-align:center;margin-bottom:4px}
+.auth .sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:22px}
+.field{text-align:left;margin-bottom:14px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.field input{
+  width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;
+  font-family:var(--mono);font-size:13px;color:var(--ink);background:var(--surface);
+}
+.field input:focus{outline:2px solid var(--corp);outline-offset:-1px;border-color:var(--corp)}
+.btn{
+  width:100%;padding:11px;background:var(--corp);color:#fff;border:none;
+  border-radius:6px;font-family:var(--sans);font-size:14px;font-weight:600;
+  cursor:pointer;transition:background .15s;margin-top:4px;
+}
+.btn:hover{background:var(--corp-dark)}
+.auth-note{margin-top:18px;font-size:11.5px;color:var(--muted);line-height:1.5;text-align:center}
+.login-err{
+  background:#fdecea;border:1px solid #f5c6c0;color:#b23a2e;
+  font-size:12.5px;padding:9px 12px;border-radius:6px;margin-bottom:16px;text-align:left;
+}
+
+/* ---- profile ---- */
+.profile-card{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:9px;padding:26px;max-width:560px;
+}
+.profile-head{display:flex;align-items:center;gap:16px;margin-bottom:22px}
+.avatar{
+  width:54px;height:54px;border-radius:50%;display:grid;place-items:center;
+  font-weight:700;font-size:20px;color:#fff;background:var(--corp);flex-shrink:0;
+}
+.avatar.admin{background:var(--alert)}
+.profile-head h2{font-size:19px;color:var(--ink)}
+.role-tag{
+  display:inline-block;font-size:11.5px;font-family:var(--mono);
+  padding:2px 9px;border-radius:20px;margin-top:5px;
+  background:#e7eef6;color:var(--corp-dark);
+}
+.role-tag.admin{background:#f8e3da;color:var(--alert)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:10px 14px;font-size:13.5px}
+.kv dt{color:var(--muted);font-family:var(--mono);font-size:12px}
+.kv dd{color:var(--ink);word-break:break-word}
+.notes-field{
+  margin-top:20px;padding:14px 16px;background:#fbf4ea;
+  border:1px solid #ecdcbd;border-radius:7px;font-size:12.5px;color:#6b5836;
+}
+.notes-field .nlabel{
+  font-family:var(--mono);font-size:11px;color:#a98b52;margin-bottom:5px;
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.notfound{
+  max-width:560px;padding:40px 34px;text-align:center;color:var(--muted);
+  background:var(--surface);border:1px dashed var(--line);border-radius:9px;
+}
+.notfound b{color:var(--ink);display:block;margin-bottom:6px;font-size:16px}
+
+/* ---- admin ---- */
+.admin-banner{
+  background:var(--alert);color:#fff;padding:15px 18px;border-radius:8px;
+  margin-bottom:22px;font-size:13.5px;max-width:760px;
+}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:760px}
+.admin-tile{
+  background:var(--surface);border:1px solid var(--line);border-radius:8px;
+  padding:18px;font-size:13px;
+}
+.admin-tile h4{font-size:13.5px;color:var(--ink);margin-bottom:6px}
+.admin-tile p{color:var(--muted);font-size:12px}
+.admin-tile.danger{border-color:#f0c4b8}
+.admin-tile.danger h4{color:var(--alert)}
+
+.page-title{font-size:20px;margin-bottom:6px}
+.page-sub{font-size:13.5px;color:var(--muted);margin-bottom:24px}
+
+@media(max-width:640px){
+  .admin-grid{grid-template-columns:1fr}
+  .page{padding:24px 18px 36px}
+  .topbar-inner{padding:12px 18px}
+}
+:focus-visible{outline:2px solid var(--corp);outline-offset:2px}
